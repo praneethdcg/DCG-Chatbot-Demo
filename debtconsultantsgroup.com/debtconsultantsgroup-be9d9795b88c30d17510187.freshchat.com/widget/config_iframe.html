@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+
+<head></head>
+
+<body>
+    <script>
+        const urlSearchParams = new URLSearchParams(window.location.search),
+            params = Object.fromEntries(urlSearchParams.entries()),
+            hasUuid = params.widgetUuid,
+            widgetUuid = hasUuid ? `&widgetUuid=${params.widgetUuid}` : ''
+        url = `${params.host}/app/services/app/webchat/${params.token}${hasUuid ? `/mw` : ''}/config?domain=${btoa(params.origin)}${widgetUuid}`;
+
+        fetch(url)
+            .then((data) => data.json())
+            .then((data) => {
+                window.parent.postMessage(JSON.stringify(data), params.origin);
+            });
+    </script>
+
+</body>
+
+</html>
