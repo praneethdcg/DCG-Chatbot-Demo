@@ -65,6 +65,107 @@
             display: none;
         }
 
+        .dcg-mobile-chat-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 16px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            color: white;
+            font-size: 24px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 16px 32px rgba(15,108,114,0.28);
+            z-index: 10001;
+            cursor: pointer;
+        }
+
+        .dcg-mobile-chat-toggle.dcg-open {
+            background: linear-gradient(135deg, #0B3C3E, #062325);
+        }
+
+        .dcg-mobile-quick-sheet {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: -100%;
+            padding: 24px 20px 32px;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(18px);
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -24px 60px rgba(15,108,114,0.24);
+            z-index: 10000;
+            transition: transform 0.3s ease, bottom 0.3s ease;
+            transform: translateY(100%);
+        }
+
+        .dcg-mobile-quick-sheet.dcg-open {
+            bottom: 0;
+            transform: translateY(0);
+        }
+
+        .dcg-mobile-quick-sheet__body {
+            max-width: 480px;
+            margin: 0 auto;
+            display: grid;
+            gap: 16px;
+            text-align: center;
+        }
+
+        .dcg-mobile-quick-sheet__body h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0B3C3E;
+        }
+
+        .dcg-mobile-quick-sheet__body p {
+            margin: 0;
+            font-size: 14px;
+            color: #4F6F71;
+        }
+
+        .dcg-mobile-quick-sheet__grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+
+        .dcg-mobile-quick-sheet__grid button {
+            padding: 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(12, 74, 78, 0.2);
+            background: white;
+            color: #0B3C3E;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(15,108,114,0.12);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .dcg-mobile-quick-sheet__grid button:active {
+            transform: scale(0.97);
+        }
+
+        .dcg-mobile-quick-sheet__grid button:hover {
+            border-color: #0F6C72;
+        }
+
+        .dcg-mobile-quick-sheet__close {
+            margin-top: 8px;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: #0F6C72;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         /* Backdrop Blur */
         #dcg-backdrop {
             position: fixed;
@@ -849,6 +950,22 @@
         </div>
     </div>
 
+    <button id="dcgMobileChatToggle" class="dcg-mobile-chat-toggle" aria-label="Open chat">💬</button>
+    <div id="dcgMobileQuickSheet" class="dcg-mobile-quick-sheet" aria-hidden="true">
+        <div class="dcg-mobile-quick-sheet__body">
+            <h2>Need help?</h2>
+            <p>Pick a topic or open the chat window.</p>
+            <div class="dcg-mobile-quick-sheet__grid">
+                <button data-mobile-action="calculator">Savings calculator demo</button>
+                <button data-mobile-action="qualify">Do I qualify?</button>
+                <button data-mobile-action="sales">Talk to a specialist</button>
+                <button data-mobile-action="help">How DCG helps</button>
+                <button data-mobile-open="true">Open chat window</button>
+            </div>
+            <button type="button" class="dcg-mobile-quick-sheet__close">Close</button>
+        </div>
+    </div>
+
     <!-- Chat Modal -->
     <div id="dcg-chat-modal">
         <!-- Header -->
@@ -928,9 +1045,110 @@
         const SAVINGS_PAGE = 'dcg-savings-workshop.html';
         const urlParams = new URLSearchParams(window.location.search);
         const isSidebarMode = urlParams.get('mode') === 'sidebar';
+        const mobileMedia = window.matchMedia('(max-width: 768px)');
+        let isMobileView = mobileMedia.matches;
+        const bottomBarEl = document.getElementById('dcg-bottom-bar');
+        const mobileToggle = document.getElementById('dcgMobileChatToggle');
+        const mobileSheet = document.getElementById('dcgMobileQuickSheet');
+        const mobileSheetButtons = mobileSheet ? Array.from(mobileSheet.querySelectorAll('[data-mobile-action]')) : [];
+        const mobileOpenChatBtn = mobileSheet ? mobileSheet.querySelector('[data-mobile-open]') : null;
+        const mobileSheetClose = mobileSheet ? mobileSheet.querySelector('.dcg-mobile-quick-sheet__close') : null;
 
         if (isSidebarMode) {
             document.body.classList.add('sidebar-mode');
+        }
+
+        function applyMobileLayout(isMobile) {
+            if (isSidebarMode) return;
+            if (isMobile) {
+                if (bottomBarEl) bottomBarEl.style.display = 'none';
+                if (mobileToggle) mobileToggle.style.display = 'flex';
+                hideMobileSheet();
+                showMobileBubble();
+            } else {
+                if (bottomBarEl) bottomBarEl.style.display = '';
+                if (mobileToggle) {
+                    mobileToggle.style.display = 'none';
+                    mobileToggle.classList.remove('dcg-open');
+                }
+                hideMobileSheet();
+            }
+        }
+
+        applyMobileLayout(isMobileView);
+        if (mobileMedia.addEventListener) {
+            mobileMedia.addEventListener('change', (event) => {
+                isMobileView = event.matches;
+                applyMobileLayout(isMobileView);
+            });
+        }
+
+        function showMobileBubble() {
+            if (mobileToggle) {
+                mobileToggle.classList.remove('dcg-open');
+                mobileToggle.style.display = 'flex';
+            }
+        }
+
+        function hideMobileBubble() {
+            if (mobileToggle) {
+                mobileToggle.classList.add('dcg-open');
+                mobileToggle.style.display = 'none';
+            }
+        }
+
+        function showMobileSheet() {
+            if (!mobileSheet) return;
+            mobileSheet.classList.add('dcg-open');
+            mobileSheet.setAttribute('aria-hidden', 'false');
+        }
+
+        function hideMobileSheet() {
+            if (!mobileSheet) return;
+            mobileSheet.classList.remove('dcg-open');
+            mobileSheet.setAttribute('aria-hidden', 'true');
+        }
+
+        function openMobileChatWindow() {
+            hideMobileSheet();
+            hideMobileBubble();
+            openChat();
+        }
+
+        function openMobileChatWithAction(action) {
+            hideMobileSheet();
+            hideMobileBubble();
+            openChatWithAction(action);
+        }
+
+        if (mobileToggle && !isSidebarMode) {
+            mobileToggle.addEventListener('click', () => {
+                if (mobileSheet && mobileSheet.classList.contains('dcg-open')) {
+                    hideMobileSheet();
+                    mobileToggle.classList.remove('dcg-open');
+                } else {
+                    showMobileSheet();
+                }
+            });
+        }
+
+        if (mobileSheetClose) {
+            mobileSheetClose.addEventListener('click', () => {
+                hideMobileSheet();
+                showMobileBubble();
+            });
+        }
+
+        mobileSheetButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const action = button.getAttribute('data-mobile-action');
+                if (!action) return;
+                openMobileChatWithAction(action);
+            });
+        });
+
+        if (mobileOpenChatBtn) {
+            mobileOpenChatBtn.addEventListener('click', openMobileChatWindow);
         }
 
         window.addEventListener('message', (event) => {
@@ -1043,6 +1261,10 @@
             if (isModalOpen) return;
 
             isModalOpen = true;
+            if (!isSidebarMode && isMobileView) {
+                hideMobileSheet();
+                hideMobileBubble();
+            }
             if (!isSidebarMode) {
                 document.getElementById('dcg-backdrop').classList.add('active');
             }
@@ -1099,6 +1321,9 @@
             setTimeout(() => {
                 modal.classList.remove('active', 'dcg-modal-minimizing');
                 document.getElementById('dcg-backdrop').classList.remove('active');
+                if (isMobileView) {
+                    showMobileBubble();
+                }
             }, 300);
 
             persistConversation({ shouldAutoOpen: false });
