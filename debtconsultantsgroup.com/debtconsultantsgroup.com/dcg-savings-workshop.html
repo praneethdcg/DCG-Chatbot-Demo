@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCG Savings Workshop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #F4F6F8;
+            color: #0B3C3E;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            color: white;
+            padding: 40px 24px 32px;
+        }
+
+        header h1 {
+            margin: 0 0 12px;
+            font-size: 32px;
+        }
+
+        header p {
+            margin: 0;
+            max-width: 720px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.85);
+        }
+
+        main {
+            max-width: 960px;
+            margin: -48px auto 64px;
+            padding: 0 24px;
+        }
+
+        .dcg-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 24px 60px rgba(15, 108, 114, 0.12);
+            padding: 32px;
+            display: grid;
+            gap: 32px;
+        }
+
+        .dcg-card section {
+            display: grid;
+            gap: 16px;
+        }
+
+        .dcg-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0C4A4E;
+        }
+
+        .dcg-metric-grid {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .dcg-metric {
+            padding: 18px;
+            border-radius: 16px;
+            background: linear-gradient(145deg, rgba(15, 108, 114, 0.08), rgba(15, 108, 114, 0.02));
+            border: 1px solid rgba(15, 108, 114, 0.08);
+        }
+
+        .dcg-metric span {
+            display: block;
+            font-size: 14px;
+            color: #335152;
+        }
+
+        .dcg-metric strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .dcg-calculator-panel {
+            background: #F9FBFB;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(12, 74, 78, 0.08);
+        }
+
+        .dcg-calculator-panel label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #0B3C3E;
+        }
+
+        .dcg-calculator-panel input,
+        .dcg-calculator-panel select {
+            width: 100%;
+            margin-top: 6px;
+            margin-bottom: 18px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(12, 74, 78, 0.15);
+            font-size: 15px;
+        }
+
+        .dcg-calculator-panel button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dcg-calculator-panel button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(15, 108, 114, 0.25);
+        }
+
+        .dcg-results {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .dcg-results div {
+            padding: 14px;
+            border-radius: 12px;
+            background: rgba(15, 108, 114, 0.08);
+            font-weight: 500;
+        }
+
+        .dcg-back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.9);
+            margin-top: 16px;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                margin-top: -32px;
+            }
+
+            .dcg-card {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a class="dcg-back-link" href="index.html">← Back to Demo Homepage</a>
+        <h1>Interactive Savings Workshop</h1>
+        <p>Preview how the DCG savings calculator could look and feel alongside the AI assistant. Enter sample numbers, review projected savings, and keep chatting with the assistant on the right as you explore.</p>
+    </header>
+
+    <main>
+        <div class="dcg-card">
+            <section>
+                <div class="dcg-section-title">Live Benchmark Snapshots</div>
+                <div class="dcg-metric-grid">
+                    <div class="dcg-metric">
+                        <span>Average Negotiated Reduction</span>
+                        <strong>47.5%</strong>
+                    </div>
+                    <div class="dcg-metric">
+                        <span>Time to First Creditor Response</span>
+                        <strong>36 hours</strong>
+                    </div>
+                    <div class="dcg-metric">
+                        <span>Weekly Cash Flow Freed</span>
+                        <strong>$8,750</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dcg-calculator-panel">
+                <div class="dcg-section-title">Savings Scenario Builder</div>
+                <label for="debtAmount">Total unsecured business debt</label>
+                <input type="number" id="debtAmount" placeholder="e.g. 125000" value="125000">
+
+                <label for="paymentComfort">Comfortable weekly payment</label>
+                <input type="number" id="paymentComfort" placeholder="e.g. 2500" value="2500">
+
+                <label for="industry">Industry</label>
+                <select id="industry">
+                    <option value="manufacturing">Manufacturing</option>
+                    <option value="retail">Retail</option>
+                    <option value="services">Professional Services</option>
+                    <option value="construction">Construction</option>
+                </select>
+
+                <button type="button" onclick="simulateSavings()">Estimate Program Impact</button>
+
+                <div class="dcg-results" id="results">
+                    <div>Estimated Settlement: $68,750</div>
+                    <div>Projected Program Length: 28 months</div>
+                    <div>Weekly Payment Target: $1,820</div>
+                </div>
+            </section>
+
+            <section>
+                <div class="dcg-section-title">What Happens Next?</div>
+                <p>Once the savings calculator confirms eligibility, the AI assistant can schedule a call, collect documents, or transition you to a human closer. Keeping the chat open on the right means prospects never lose momentum while reviewing numbers.</p>
+            </section>
+        </div>
+    </main>
+
+    <iframe
+        src="dcg-ally-enhanced.html?mode=sidebar"
+        style="position: fixed; bottom: 24px; right: 24px; width: 420px; max-width: 90vw; height: 620px; border: none; z-index: 9999;"
+        title="DCG Assistant Sidebar"
+        id="dcgAllyFrameSidebar"
+        allow="clipboard-write">
+    </iframe>
+
+    <script>
+        function simulateSavings() {
+            const debt = Number(document.getElementById('debtAmount').value || 0);
+            const payment = Number(document.getElementById('paymentComfort').value || 0);
+            const industry = document.getElementById('industry').value;
+
+            if (!debt || debt < 10000) {
+                alert('Enter at least $10,000 in debt to model savings.');
+                return;
+            }
+
+            const reductionRate = 0.45;
+            const settlement = Math.round(debt * (1 - reductionRate));
+            const weeklyTarget = payment ? Math.round(Math.max(payment * 0.7, settlement / 110)) : Math.round(settlement / 110);
+            const durationMonths = Math.max(18, Math.round((settlement / Math.max(weeklyTarget, 1)) * 4));
+
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div>Estimated Settlement: $${settlement.toLocaleString()}</div>
+                <div>Projected Program Length: ${durationMonths} months</div>
+                <div>Weekly Payment Target: $${weeklyTarget.toLocaleString()}</div>
+                <div>Industry Benchmark: ${industry === 'construction' ? 'Higher risk, adjust to 50% reduction' : 'Comparable clients save 42-52%'}
+            `;
+        }
+    </script>
+</body>
+</html>

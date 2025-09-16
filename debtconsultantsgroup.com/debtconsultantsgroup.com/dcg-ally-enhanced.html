@@ -15,6 +15,50 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
         }
 
+        body.sidebar-mode {
+            background: transparent;
+        }
+
+        body.sidebar-mode #dcg-backdrop {
+            display: none !important;
+        }
+
+        body.sidebar-mode #dcg-bottom-bar {
+            display: none !important;
+        }
+
+        body.sidebar-mode #dcg-chat-modal {
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transform: none;
+            width: 100%;
+            max-width: none;
+            height: 100%;
+            max-height: none;
+            border-radius: 18px;
+            opacity: 1;
+            visibility: visible;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+        }
+
+        body.sidebar-mode #dcg-chat-modal.active {
+            transform: none;
+        }
+
+        body.sidebar-mode .dcg-modal-header {
+            border-radius: 18px 18px 0 0;
+        }
+
+        body.sidebar-mode .dcg-input-container {
+            border-radius: 0 0 18px 18px;
+        }
+
+        body.sidebar-mode .dcg-header-actions button:last-child {
+            display: none;
+        }
+
         /* Backdrop Blur */
         #dcg-backdrop {
             position: fixed;
@@ -868,36 +912,50 @@
             userIntent: null
         };
         let hasShownBar = false;
+        let isRestoring = false;
 
-        // Limit message history to prevent memory leak
+        // Persistent configuration
         const MAX_MESSAGES = 100;
+        const CHAT_STORAGE_KEY = 'dcgAssistantSession';
+        const SAVINGS_PAGE = 'dcg-savings-workshop.html';
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSidebarMode = urlParams.get('mode') === 'sidebar';
 
-        // Show chatbot after scrolling
-        window.addEventListener('scroll', function() {
-            if (!hasShownBar && window.scrollY > 100) {
-                hasShownBar = true;
-                const bottomBar = document.getElementById('dcg-bottom-bar');
-                bottomBar.classList.add('visible');
-            }
-        });
+        if (isSidebarMode) {
+            document.body.classList.add('sidebar-mode');
+        }
 
-        // Also show after 3 seconds if no scroll
-        setTimeout(function() {
-            if (!hasShownBar) {
-                hasShownBar = true;
-                const bottomBar = document.getElementById('dcg-bottom-bar');
-                bottomBar.classList.add('visible');
+        if (!isSidebarMode) {
+            // Show chatbot after scrolling
+            window.addEventListener('scroll', function() {
+                if (!hasShownBar && window.scrollY > 100) {
+                    hasShownBar = true;
+                    const bottomBar = document.getElementById('dcg-bottom-bar');
+                    bottomBar.classList.add('visible');
+                    persistConversation();
+                }
+            });
 
-                // Show a subtle animation hint that buttons are available
-                setTimeout(() => {
-                    const container = document.querySelector('.dcg-bar-container');
-                    container.style.transform = 'translateY(-2px)';
+            // Also show after 3 seconds if no scroll
+            setTimeout(function() {
+                if (!hasShownBar) {
+                    hasShownBar = true;
+                    const bottomBar = document.getElementById('dcg-bottom-bar');
+                    bottomBar.classList.add('visible');
+
+                    // Show a subtle animation hint that buttons are available
                     setTimeout(() => {
-                        container.style.transform = 'translateY(0)';
-                    }, 300);
-                }, 1000);
-            }
-        }, 3000);
+                        const container = document.querySelector('.dcg-bar-container');
+                        container.style.transform = 'translateY(-2px)';
+                        setTimeout(() => {
+                            container.style.transform = 'translateY(0)';
+                        }, 300);
+                    }, 1000);
+
+                    persistConversation();
+                }
+            }, 3000);
+        }
 
         // Handle bottom input
         function handleBottomInput(event) {
@@ -957,11 +1015,16 @@
             if (isModalOpen) return;
 
             isModalOpen = true;
-            document.getElementById('dcg-backdrop').classList.add('active');
+            if (!isSidebarMode) {
+                document.getElementById('dcg-backdrop').classList.add('active');
+            }
             document.getElementById('dcg-chat-modal').classList.add('active');
 
             // Clear bottom input
-            document.getElementById('bottomInput').value = '';
+            const bottomInput = document.getElementById('bottomInput');
+            if (bottomInput) {
+                bottomInput.value = '';
+            }
 
             // Add welcome message if first time
             if (messages.length === 0) {
@@ -992,10 +1055,15 @@
             setTimeout(() => {
                 document.getElementById('chatInput').focus();
             }, 400);
+
+            persistConversation({ shouldAutoOpen: true });
         }
 
         // Minimize chat
         function minimizeChat() {
+            if (isSidebarMode) {
+                return;
+            }
             isModalOpen = false;
             const modal = document.getElementById('dcg-chat-modal');
             modal.classList.add('dcg-modal-minimizing');
@@ -1004,6 +1072,8 @@
                 modal.classList.remove('active', 'dcg-modal-minimizing');
                 document.getElementById('dcg-backdrop').classList.remove('active');
             }, 300);
+
+            persistConversation({ shouldAutoOpen: false });
         }
 
         // Restart conversation
@@ -1016,6 +1086,12 @@
                 userIntent: null
             };
             document.getElementById('messagesContainer').innerHTML = '';
+
+            try {
+                sessionStorage.removeItem(CHAT_STORAGE_KEY);
+            } catch (error) {
+                console.warn('Unable to clear chat storage', error);
+            }
 
             // Add welcome message with inline buttons
             setTimeout(() => {
@@ -1036,6 +1112,131 @@
                     </div>
                 `, true);
             }, 300);
+        }
+
+        function persistConversation(overrides = {}) {
+            try {
+                if (typeof sessionStorage === 'undefined') {
+                    return;
+                }
+
+                const state = {
+                    messages,
+                    conversationContext,
+                    hasShownBar,
+                    isModalOpen,
+                    shouldAutoOpen: Object.prototype.hasOwnProperty.call(overrides, 'shouldAutoOpen')
+                        ? overrides.shouldAutoOpen
+                        : isModalOpen,
+                    mode: isSidebarMode ? 'sidebar' : 'modal',
+                    timestamp: Date.now()
+                };
+
+                sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(state));
+            } catch (error) {
+                console.warn('Unable to persist chat state', error);
+            }
+        }
+
+        function restoreConversation() {
+            let rawState = null;
+
+            try {
+                if (typeof sessionStorage === 'undefined') {
+                    if (isSidebarMode) {
+                        setTimeout(() => openChat(), 300);
+                    }
+                    return;
+                }
+
+                rawState = sessionStorage.getItem(CHAT_STORAGE_KEY);
+            } catch (error) {
+                console.warn('Unable to access chat storage', error);
+                if (isSidebarMode) {
+                    setTimeout(() => openChat(), 300);
+                }
+                return;
+            }
+
+            if (!rawState) {
+                if (isSidebarMode) {
+                    setTimeout(() => openChat(), 300);
+                }
+                return;
+            }
+
+            try {
+                const savedState = JSON.parse(rawState);
+
+                if (!savedState || !Array.isArray(savedState.messages)) {
+                    if (isSidebarMode) {
+                        setTimeout(() => openChat(), 300);
+                    }
+                    return;
+                }
+
+                isRestoring = true;
+                savedState.messages.forEach(message => {
+                    if (message && message.type && typeof message.content !== 'undefined') {
+                        addMessage(message.type, message.content, !!message.isHTML);
+                    }
+                });
+                isRestoring = false;
+
+                if (savedState.conversationContext) {
+                    conversationContext = { ...conversationContext, ...savedState.conversationContext };
+                }
+
+                if (typeof savedState.hasShownBar === 'boolean') {
+                    hasShownBar = savedState.hasShownBar;
+                    if (hasShownBar && !isSidebarMode) {
+                        const bar = document.getElementById('dcg-bottom-bar');
+                        if (bar) {
+                            bar.classList.add('visible');
+                        }
+                    }
+                }
+
+                const shouldOpen = savedState.shouldAutoOpen || isSidebarMode;
+                if (shouldOpen) {
+                    setTimeout(() => openChat(), 250);
+                }
+
+                persistConversation({ shouldAutoOpen: false });
+            } catch (error) {
+                console.warn('Unable to restore chat state', error);
+                if (isSidebarMode) {
+                    setTimeout(() => openChat(), 300);
+                }
+            }
+        }
+
+        function isOnSavingsWorkspace() {
+            try {
+                if (window.top && window.top.location) {
+                    return window.top.location.href.indexOf(SAVINGS_PAGE) !== -1;
+                }
+                return window.location.href.indexOf(SAVINGS_PAGE) !== -1;
+            } catch (error) {
+                return window.location.href.indexOf(SAVINGS_PAGE) !== -1;
+            }
+        }
+
+        function navigateToSavingsWorkspace() {
+            const targetUrl = SAVINGS_PAGE;
+
+            persistConversation({ shouldAutoOpen: true });
+
+            try {
+                if (window.top && window.top.location) {
+                    window.top.location.href = targetUrl;
+                    return;
+                }
+            } catch (error) {
+                console.warn('Unable to use top-level navigation', error);
+            }
+
+            window.location.href = targetUrl;
         }
 
         // Handle inline action buttons
@@ -1125,7 +1326,7 @@
             container.appendChild(messageDiv);
 
             // Save message with memory limit
-            messages.push({ type, content });
+            messages.push({ type, content, isHTML });
 
             // Prevent memory leak by limiting message history
             if (messages.length > MAX_MESSAGES) {
@@ -1134,6 +1335,10 @@
 
             // Scroll to bottom
             container.scrollTop = container.scrollHeight;
+
+            if (!isRestoring) {
+                persistConversation();
+            }
         }
 
         // Show typing indicator
@@ -1274,26 +1479,29 @@
                 } else if (lower.includes('calculator') || lower.includes('demo')) {
                     addMessage('bot', `
                         <div>
-                            <strong>📊 DCG Savings Calculator</strong><br><br>
-                            Calculate your potential savings instantly:<br><br>
+                            <strong>📊 DCG Savings Workshop</strong><br><br>
+                            I'll open an interactive savings workspace so you can run numbers while we keep chatting on the side.<br><br>
 
-                            <div style="background: rgba(15, 108, 114, 0.1); padding: 16px; border-radius: 8px;">
-                                <strong>Try Our Calculator:</strong><br>
-                                <a href="https://mcarelief.debtconsultantsgroup.com/calculator/form?utm_source=dcg-quiz-ig&utm_medium=social&utm_campaign=ajs"
-                                   target="_blank"
-                                   style="color: #0F6C72; text-decoration: underline; font-weight: 600; font-size: 16px;">
-                                    Click Here to Open Calculator →
-                                </a>
+                            <ul style="margin-left: 20px;">
+                                <li>Model settlement ranges and weekly payments</li>
+                                <li>Compare industry benchmarks instantly</li>
+                                <li>Stay in the conversation for follow-up questions</li>
+                            </ul>
+
+                            <div class="dcg-inline-actions" style="margin-top: 12px;">
+                                <button class="dcg-inline-action" onclick="navigateToSavingsWorkspace()">
+                                    🚀 Open savings workspace
+                                </button>
                             </div>
 
-                            <p style="margin-top: 12px;">The calculator will show:</p>
-                            <ul style="margin-left: 20px;">
-                                <li>Your estimated savings (40-60%)</li>
-                                <li>New lower payment amount</li>
-                                <li>Time to debt freedom</li>
-                            </ul>
+                            <p style="margin-top: 8px; font-size: 13px; color: #6C757D;">If the page doesn't switch automatically, tap the button above.</p>
                         </div>
                     `, true);
+
+                    if (!isOnSavingsWorkspace()) {
+                        persistConversation({ shouldAutoOpen: true });
+                        setTimeout(() => navigateToSavingsWorkspace(), 900);
+                    }
                 } else if ((lower === 'yes' || lower.includes('yes')) && conversationContext.hasAskedAboutQualification) {
                     addMessage('bot', `
                         <div>
@@ -1475,6 +1683,8 @@
                     }
                     showContactForm();
                 }
+
+                persistConversation();
             }, typingDelay);
         }
 
@@ -1567,6 +1777,7 @@
             `, true);
 
             conversationContext.hasProvidedContact = true;
+            persistConversation();
         }
 
         // Microphone placeholder function
@@ -1593,6 +1804,8 @@
                 }, 2000);
             }
         }
+
+        restoreConversation();
     </script>
 </body>
 </html>
