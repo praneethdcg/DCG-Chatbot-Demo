@@ -765,7 +765,7 @@
                         type="text"
                         class="dcg-bottom-input"
                         id="bottomInput"
-                        placeholder="👋 Hi, welcome to DCG! Curious what DCG can negotiate for you? Tell me your biggest debt challenge and I'll map it out."
+                        placeholder="👋 Hi, welcome to DCG! Ask about savings demos, qualifying, or connect with a specialist."
                         onkeypress="handleBottomInput(event)"
                     />
                     <button class="dcg-mic-button" onclick="toggleMicrophone(event, 'bottom')" type="button" title="Voice input (coming soon)">
@@ -838,7 +838,7 @@
                     type="text"
                     class="dcg-chat-input"
                     id="chatInput"
-                    placeholder="Curious what DCG can negotiate for you? Tell me your biggest debt challenge and I'll map it out."
+                    placeholder="Ask about savings demos, qualification, or connect with a specialist."
                     autocomplete="off"
                 />
                 <button class="dcg-mic-button" onclick="toggleMicrophone(event, 'modal')" type="button" title="Voice input (coming soon)">
@@ -971,17 +971,16 @@
                 setTimeout(() => {
                     addMessage('bot', `
                         <div>
-                            <p style="margin-bottom: 12px;">👋 ${greeting}! I'm your DCG Assistant. I help businesses like yours reduce debt by 40-60% without bankruptcy or new loans.</p>
-                            <p style="margin-bottom: 12px; font-size: 14px; color: #666;">What brings you here today?</p>
+                            <p style="margin-bottom: 12px;">👋 ${greeting}! Welcome to DCG. Ask me about savings calculator demos, qualification steps, or connect with a specialist.</p>
                             <div class="dcg-inline-actions">
-                                <button class="dcg-inline-action" onclick="handleInlineAction('struggling')">
-                                    💰 Struggling with payments
+                                <button class="dcg-inline-action" onclick="handleInlineAction('calculator')">
+                                    📊 Savings demo
                                 </button>
-                                <button class="dcg-inline-action" onclick="handleInlineAction('exploring')">
-                                    🔍 Exploring options
+                                <button class="dcg-inline-action" onclick="handleInlineAction('qualify')">
+                                    ✅ Do I qualify?
                                 </button>
-                                <button class="dcg-inline-action" onclick="handleInlineAction('ready')">
-                                    ✅ Ready for help
+                                <button class="dcg-inline-action" onclick="handleInlineAction('sales')">
+                                    📞 Talk to specialist
                                 </button>
                             </div>
                         </div>
@@ -1417,7 +1416,15 @@
                             </div>
                         </div>
                     `, true);
-                } else if (lower.includes('sales') || lower.includes('specialist') || lower.includes('speak') || lower.includes('talk') || lower.includes('connect')) {
+                } else if (
+                    lower.includes('sales') ||
+                    lower.includes('specialist') ||
+                    lower.includes('speak') ||
+                    lower.includes('talk') ||
+                    lower.includes('connect') ||
+                    lower.includes('representative') ||
+                    lower.includes('rep')
+                ) {
                     addMessage('bot', 'Perfect! Let me connect you with a debt relief specialist who can provide personalized solutions. Please provide your contact information:');
                     showContactForm();
                 } else if (lower.includes('help') || lower.includes('how') || lower.includes('what')) {
