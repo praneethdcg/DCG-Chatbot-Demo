@@ -1785,6 +1785,11 @@
             event.preventDefault();
             event.stopPropagation();
 
+            if (location === 'bottom' && !isModalOpen && !isSidebarMode) {
+                openChat();
+                return;
+            }
+
             const micButton = event.currentTarget;
             const isListening = micButton.classList.contains('listening');
 
@@ -1803,6 +1808,17 @@
                     addMessage('bot', '🎤 Voice input feature coming soon! For now, please type your message.');
                 }, 2000);
             }
+        }
+
+        const bottomInputEl = document.getElementById('bottomInput');
+        if (bottomInputEl && !isSidebarMode) {
+            const bringChatForward = () => {
+                if (!isModalOpen) {
+                    openChat();
+                }
+            };
+            bottomInputEl.addEventListener('focus', bringChatForward);
+            bottomInputEl.addEventListener('click', bringChatForward);
         }
 
         restoreConversation();
