@@ -945,6 +945,12 @@
                     processUserMessage(interestMessage);
                 }, 200);
             }
+
+            if (event.data.type === 'DCG_QUICK_ACTION') {
+                const action = event.data.action;
+                if (!action) return;
+                openChatWithAction(action);
+            }
         });
 
         if (!isSidebarMode) {

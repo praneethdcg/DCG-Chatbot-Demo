@@ -402,6 +402,84 @@
             background: linear-gradient(135deg, #0B3C3E, #062325);
         }
 
+        .dcg-quick-actions-sheet {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: -100%;
+            padding: 24px 20px 32px;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(18px);
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -24px 60px rgba(15,108,114,0.24);
+            z-index: 10000;
+            transition: transform 0.3s ease, bottom 0.3s ease;
+            transform: translateY(100%);
+        }
+
+        .dcg-quick-actions-sheet.dcg-open {
+            bottom: 0;
+            transform: translateY(0);
+        }
+
+        .dcg-quick-actions-sheet__body {
+            max-width: 480px;
+            margin: 0 auto;
+            display: grid;
+            gap: 16px;
+            text-align: center;
+        }
+
+        .dcg-quick-actions-sheet__body h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0B3C3E;
+        }
+
+        .dcg-quick-actions-sheet__body p {
+            margin: 0;
+            font-size: 14px;
+            color: #4F6F71;
+        }
+
+        .dcg-quick-actions-sheet__grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        }
+
+        .dcg-quick-actions-sheet__grid button {
+            padding: 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(12, 74, 78, 0.2);
+            background: white;
+            color: #0B3C3E;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(15,108,114,0.12);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .dcg-quick-actions-sheet__grid button:active {
+            transform: scale(0.97);
+        }
+
+        .dcg-quick-actions-sheet__grid button:hover {
+            border-color: #0F6C72;
+        }
+
+        .dcg-quick-actions-sheet__close {
+            margin-top: 8px;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: #0F6C72;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         .dcg-confetti-piece {
             position: absolute;
             width: 10px;
@@ -569,6 +647,19 @@
     </iframe>
 
     <button id="dcgChatToggle" class="dcg-chat-toggle" aria-label="Open chat">💬</button>
+    <div id="dcgQuickActionsSheet" class="dcg-quick-actions-sheet" aria-hidden="true">
+        <div class="dcg-quick-actions-sheet__body">
+            <h2>Quick help</h2>
+            <p>Pick a topic or type your own question.</p>
+            <div class="dcg-quick-actions-sheet__grid">
+                <button data-action="calculator">Savings calculator demo</button>
+                <button data-action="qualify">Do I qualify?</button>
+                <button data-action="sales">Talk to a specialist</button>
+                <button data-action="help">How DCG helps</button>
+            </div>
+            <button class="dcg-quick-actions-sheet__close" type="button">Close</button>
+        </div>
+    </div>
 
     <script>
         const compactMedia = window.matchMedia('(max-width: 960px)');
@@ -576,6 +667,9 @@
         const contactContainer = document.getElementById('dcg-contact-container');
         const sidebarFrame = document.getElementById('dcgAllyFrameSidebar');
         const chatToggle = document.getElementById('dcgChatToggle');
+        const quickSheet = document.getElementById('dcgQuickActionsSheet');
+        const quickSheetClose = quickSheet ? quickSheet.querySelector('.dcg-quick-actions-sheet__close') : null;
+        const quickSheetButtons = quickSheet ? Array.from(quickSheet.querySelectorAll('[data-action]')) : [];
 
         function applySidebarLayout(compact) {
             if (!sidebarFrame) return;
@@ -591,6 +685,10 @@
                     chatToggle.style.display = 'flex';
                     chatToggle.classList.remove('dcg-open');
                 }
+                if (quickSheet) {
+                    quickSheet.classList.remove('dcg-open');
+                    quickSheet.setAttribute('aria-hidden', 'true');
+                }
             } else {
                 sidebarFrame.style.width = 'min(420px, 38vw)';
                 sidebarFrame.style.left = '';
@@ -602,6 +700,10 @@
                 if (chatToggle) {
                     chatToggle.style.display = 'none';
                     chatToggle.classList.remove('dcg-open');
+                }
+                if (quickSheet) {
+                    quickSheet.classList.remove('dcg-open');
+                    quickSheet.setAttribute('aria-hidden', 'true');
                 }
             }
         }
@@ -618,14 +720,64 @@
             chatToggle.addEventListener('click', () => {
                 const isVisible = sidebarFrame.style.display === 'block';
                 if (isVisible) {
-                    sidebarFrame.style.display = 'none';
-                    chatToggle.classList.remove('dcg-open');
+                    hideMobileChat();
                 } else {
-                    sidebarFrame.style.display = 'block';
-                    chatToggle.classList.add('dcg-open');
+                    showMobileChat();
                 }
             });
         }
+
+        function showMobileChat() {
+            if (!sidebarFrame) return;
+            sidebarFrame.style.display = 'block';
+            if (chatToggle) {
+                chatToggle.classList.add('dcg-open');
+                chatToggle.style.display = 'none';
+            }
+            if (quickSheet) {
+                quickSheet.classList.add('dcg-open');
+                quickSheet.setAttribute('aria-hidden', 'false');
+            }
+        }
+
+        function hideMobileChat() {
+            if (!sidebarFrame) return;
+            sidebarFrame.style.display = 'none';
+            if (chatToggle) {
+                chatToggle.classList.remove('dcg-open');
+                chatToggle.style.display = 'flex';
+            }
+            if (quickSheet) {
+                quickSheet.classList.remove('dcg-open');
+                quickSheet.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        if (quickSheetClose) {
+            quickSheetClose.addEventListener('click', hideMobileChat);
+        }
+
+        function sendQuickAction(action) {
+            try {
+                const frame = document.getElementById('dcgAllyFrameSidebar');
+                frame.contentWindow.postMessage({ type: 'DCG_QUICK_ACTION', action }, '*');
+            } catch (error) {
+                console.warn('Unable to send quick action', error);
+            }
+        }
+
+        quickSheetButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const action = button.getAttribute('data-action');
+                if (!action) return;
+                showMobileChat();
+                sendQuickAction(action);
+                if (isCompact && quickSheet) {
+                    quickSheet.classList.remove('dcg-open');
+                    quickSheet.setAttribute('aria-hidden', 'true');
+                }
+            });
+        });
         const lenderRowsEl = document.getElementById('dcg-lender-rows');
         const addRowBtn = document.getElementById('dcg-add-lender');
         const runButton = document.getElementById('dcg-run-calculation');
