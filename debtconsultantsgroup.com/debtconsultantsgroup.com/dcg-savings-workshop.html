@@ -22,7 +22,7 @@
         header {
             background: linear-gradient(135deg, #0F6C72, #0B3C3E);
             color: white;
-            padding: 48px 24px 40px;
+            padding: 52px 24px 44px;
         }
 
         header h1 {
@@ -33,7 +33,7 @@
 
         header p {
             margin: 0;
-            max-width: 760px;
+            max-width: 780px;
             font-size: 16px;
             line-height: 1.6;
             color: rgba(255,255,255,0.85);
@@ -41,7 +41,7 @@
 
         main {
             max-width: 1100px;
-            margin: -56px auto 80px;
+            margin: 32px auto 96px;
             padding: 0 24px;
         }
 
@@ -49,9 +49,9 @@
             background: white;
             border-radius: 28px;
             box-shadow: 0 30px 75px rgba(15, 108, 114, 0.16);
-            padding: 40px;
+            padding: 42px;
             display: grid;
-            gap: 40px;
+            gap: 44px;
         }
 
         .dcg-section-title {
@@ -98,157 +98,9 @@
             font-weight: 500;
         }
 
-        .dcg-summary {
-            background: linear-gradient(135deg, rgba(15, 108, 114, 0.08), rgba(15, 108, 114, 0.02));
-            border: 1px solid rgba(12, 74, 78, 0.12);
-            border-radius: 24px;
-            padding: 28px;
-            display: grid;
-            gap: 24px;
-        }
-
-        .dcg-summary-hero {
-            display: grid;
-            gap: 8px;
-            align-items: center;
-            text-align: left;
-        }
-
-        .dcg-summary-label {
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.12em;
-            color: #0F6C72;
-            font-weight: 600;
-        }
-
-        .dcg-summary-value {
-            font-size: 42px;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            color: #0B3C3E;
-        }
-
-        .dcg-summary-sub {
-            font-size: 14px;
-            color: #4F6F71;
-        }
-
-        .dcg-summary-grid {
-            display: grid;
-            gap: 18px;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        }
-
-        .dcg-summary-card {
-            background: white;
-            border-radius: 16px;
-            padding: 18px;
-            border: 1px solid rgba(12, 74, 78, 0.08);
-            box-shadow: 0 14px 28px rgba(15,108,114,0.08);
-            display: grid;
-            gap: 6px;
-        }
-
-        .dcg-summary-card span {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #4F6F71;
-            font-weight: 600;
-        }
-
-        .dcg-summary-card strong {
-            font-size: 20px;
-            color: #0B3C3E;
-            font-weight: 700;
-        }
-
-        .dcg-status {
-            font-size: 13px;
-            padding: 10px 14px;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            width: fit-content;
-        }
-
-        .dcg-status::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .dcg-status-info {
-            background: rgba(15, 108, 114, 0.08);
-            color: #0B3C3E;
-        }
-
-        .dcg-status-info::before {
-            background: #0F6C72;
-        }
-
-        .dcg-status-dirty {
-            background: rgba(244, 162, 97, 0.16);
-            color: #6E3810;
-        }
-
-        .dcg-status-dirty::before {
-            background: #F08A24;
-        }
-
-        .dcg-summary-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .dcg-primary-button {
-            padding: 14px 22px;
-            border-radius: 16px;
-            border: none;
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 16px 30px rgba(15, 108, 114, 0.25);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .dcg-primary-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 24px 45px rgba(15, 108, 114, 0.25);
-        }
-
-        .dcg-secondary-button {
-            padding: 14px 22px;
-            border-radius: 16px;
-            border: 1px solid rgba(12, 74, 78, 0.22);
-            background: white;
-            color: #0B3C3E;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .dcg-secondary-button:hover {
-            transform: translateY(-1px);
-            border-color: #0F6C72;
-        }
-
-        .dcg-summary-note {
-            font-size: 12px;
-            color: #4F6F71;
-        }
-
         .dcg-lender-builder {
             display: grid;
-            gap: 20px;
+            gap: 22px;
         }
 
         .dcg-lender-rows {
@@ -323,6 +175,169 @@
             transform: translateY(-1px);
         }
 
+        .dcg-run-panel {
+            display: grid;
+            gap: 16px;
+        }
+
+        .dcg-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .dcg-primary-button {
+            padding: 14px 22px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 16px 30px rgba(15, 108, 114, 0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dcg-primary-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 24px 45px rgba(15, 108, 114, 0.25);
+        }
+
+        .dcg-secondary-button {
+            padding: 14px 22px;
+            border-radius: 16px;
+            border: 1px solid rgba(12, 74, 78, 0.22);
+            background: white;
+            color: #0B3C3E;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .dcg-secondary-button[disabled] {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .dcg-secondary-button:hover:not([disabled]) {
+            transform: translateY(-1px);
+            border-color: #0F6C72;
+        }
+
+        .dcg-status {
+            font-size: 13px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+        }
+
+        .dcg-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dcg-status-info {
+            background: rgba(15, 108, 114, 0.08);
+            color: #0B3C3E;
+        }
+
+        .dcg-status-info::before {
+            background: #0F6C72;
+        }
+
+        .dcg-status-dirty {
+            background: rgba(244, 162, 97, 0.16);
+            color: #6E3810;
+        }
+
+        .dcg-status-dirty::before {
+            background: #F08A24;
+        }
+
+        .dcg-summary-wrapper {
+            display: none;
+        }
+
+        .dcg-summary-wrapper.dcg-visible {
+            display: block;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .dcg-summary {
+            background: linear-gradient(135deg, rgba(15, 108, 114, 0.08), rgba(15, 108, 114, 0.02));
+            border: 1px solid rgba(12, 74, 78, 0.12);
+            border-radius: 24px;
+            padding: 28px;
+            display: grid;
+            gap: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dcg-summary-hero {
+            display: grid;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .dcg-summary-label {
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            color: #0F6C72;
+            font-weight: 600;
+        }
+
+        .dcg-summary-value {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: #0B3C3E;
+        }
+
+        .dcg-summary-sub {
+            font-size: 14px;
+            color: #4F6F71;
+        }
+
+        .dcg-summary-grid {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .dcg-summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid rgba(12, 74, 78, 0.08);
+            box-shadow: 0 14px 28px rgba(15,108,114,0.08);
+            display: grid;
+            gap: 6px;
+        }
+
+        .dcg-summary-card span {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4F6F71;
+            font-weight: 600;
+        }
+
+        .dcg-summary-card strong {
+            font-size: 20px;
+            color: #0B3C3E;
+            font-weight: 700;
+        }
+
         .dcg-qualification {
             padding: 20px;
             border-radius: 18px;
@@ -363,21 +378,52 @@
             margin-top: 18px;
         }
 
+        .dcg-confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 14px;
+            top: -20px;
+            border-radius: 3px;
+            opacity: 0;
+            animation: confetti-fall 1.2s ease forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(220px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width: 960px) {
             .dcg-lender-row {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
             .dcg-card {
-                padding: 30px;
+                padding: 32px;
             }
         }
 
         @media (max-width: 640px) {
-            main {
-                margin-top: -32px;
-            }
-
             .dcg-card {
                 padding: 24px;
             }
@@ -406,47 +452,48 @@
                 <div id="dcg-contact-container"></div>
             </section>
 
-            <section class="dcg-summary">
-                <div class="dcg-summary-hero">
-                    <span class="dcg-summary-label">Projected monthly savings</span>
-                    <div class="dcg-summary-value" id="dcg-summary-monthly">$0</div>
-                    <div class="dcg-summary-sub">versus your current payment schedule</div>
-                </div>
-                <div class="dcg-summary-grid">
-                    <div class="dcg-summary-card">
-                        <span>Current weekly payments</span>
-                        <strong id="dcg-weekly-total">$0</strong>
-                    </div>
-                    <div class="dcg-summary-card">
-                        <span>Recommended weekly payment</span>
-                        <strong id="dcg-weekly-target">$0</strong>
-                    </div>
-                    <div class="dcg-summary-card">
-                        <span>Estimated settlement</span>
-                        <strong id="dcg-settlement">$0</strong>
-                    </div>
-                    <div class="dcg-summary-card">
-                        <span>Program length</span>
-                        <strong id="dcg-program-length">0 months</strong>
-                    </div>
-                </div>
-                <div id="dcg-run-status" class="dcg-status dcg-status-info">Example scenario loaded. Adjust the lenders below and run a fresh estimate.</div>
-                <div class="dcg-summary-actions">
-                    <button type="button" id="dcg-run-calculation" class="dcg-primary-button">Run savings estimate</button>
-                    <button type="button" id="dcg-interest-button" class="dcg-secondary-button">I'm interested in these savings</button>
-                </div>
-                <div class="dcg-summary-note">Tip: change balances, payment amounts, or frequencies below. The calculator remembers each lender you add.</div>
-            </section>
-
             <section class="dcg-lender-builder">
                 <div class="dcg-section-title">Debt portfolio</div>
                 <p style="margin: 0; color: #4F6F71;">Include every creditor you want DCG to negotiate. Use the notes field to mark MCAs or high-priority accounts.</p>
                 <div class="dcg-lender-rows" id="dcg-lender-rows"></div>
                 <button type="button" class="dcg-add-row" id="dcg-add-lender">＋ Add another lender</button>
+
+                <div class="dcg-run-panel">
+                    <div class="dcg-actions">
+                        <button type="button" id="dcg-run-calculation" class="dcg-primary-button">Run savings estimate</button>
+                        <button type="button" id="dcg-interest-button" class="dcg-secondary-button" disabled>I'm interested in these savings</button>
+                    </div>
+                    <div id="dcg-run-status" class="dcg-status dcg-status-info">Adjust the inputs above and run your estimate when you’re ready.</div>
+                </div>
             </section>
 
-            <section>
-                <div id="dcg-qualification" class="dcg-qualification dcg-warning">Enter at least $25,000 in unsecured debt to check eligibility.</div>
+            <section id="dcg-summary-wrapper" class="dcg-summary-wrapper">
+                <div class="dcg-summary" id="dcg-summary">
+                    <div class="dcg-summary-hero">
+                        <span class="dcg-summary-label">Projected monthly savings</span>
+                        <div class="dcg-summary-value" id="dcg-summary-monthly">$0</div>
+                        <div class="dcg-summary-sub">versus your current payment schedule</div>
+                    </div>
+                    <div class="dcg-summary-grid">
+                        <div class="dcg-summary-card">
+                            <span>Current weekly payments</span>
+                            <strong id="dcg-weekly-total">$0</strong>
+                        </div>
+                        <div class="dcg-summary-card">
+                            <span>Recommended weekly payment</span>
+                            <strong id="dcg-weekly-target">$0</strong>
+                        </div>
+                        <div class="dcg-summary-card">
+                            <span>Estimated settlement</span>
+                            <strong id="dcg-settlement">$0</strong>
+                        </div>
+                        <div class="dcg-summary-card">
+                            <span>Program length</span>
+                            <strong id="dcg-program-length">0 months</strong>
+                        </div>
+                    </div>
+                    <div id="dcg-qualification" class="dcg-qualification dcg-warning">Enter at least $25,000 in unsecured debt to check eligibility.</div>
+                </div>
             </section>
 
             <section class="dcg-next-steps">
@@ -462,7 +509,7 @@
 
     <iframe
         src="dcg-ally-enhanced.html?mode=sidebar"
-        style="position: fixed; bottom: 24px; right: 16px; width: 360px; max-width: 88vw; height: 580px; border: none; z-index: 9999;"
+        style="position: fixed; bottom: 24px; right: 12px; width: 320px; max-width: 88vw; height: 560px; border: none; z-index: 9999;"
         title="DCG Assistant Sidebar"
         id="dcgAllyFrameSidebar"
         allow="clipboard-write">
@@ -475,6 +522,8 @@
         const runButton = document.getElementById('dcg-run-calculation');
         const interestButton = document.getElementById('dcg-interest-button');
         const statusEl = document.getElementById('dcg-run-status');
+        const summaryWrapper = document.getElementById('dcg-summary-wrapper');
+        const summaryCard = document.getElementById('dcg-summary');
 
         const monthlySavingsEl = document.getElementById('dcg-summary-monthly');
         const weeklyTotalEl = document.getElementById('dcg-weekly-total');
@@ -687,6 +736,20 @@
             if (!isDirty) {
                 isDirty = true;
                 updateStatus('Inputs updated. Click “Run savings estimate” to refresh.', 'dirty');
+                interestButton.disabled = true;
+            }
+        }
+
+        function launchConfetti() {
+            const colors = ['#0F6C72', '#0B3C3E', '#F7B500', '#26C485', '#F87060'];
+            for (let i = 0; i < 24; i++) {
+                const piece = document.createElement('span');
+                piece.className = 'dcg-confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = (Math.random() * 0.4) + 's';
+                summaryCard.appendChild(piece);
+                setTimeout(() => piece.remove(), 1400);
             }
         }
 
@@ -701,6 +764,9 @@
             hasRun = true;
             isDirty = false;
             updateStatus('Estimates updated just now.', 'info');
+            summaryWrapper.classList.add('dcg-visible');
+            interestButton.disabled = false;
+            launchConfetti();
         });
 
         interestButton.addEventListener('click', () => {
@@ -709,7 +775,6 @@
                 frame.contentWindow.postMessage({ type: 'DCG_INTEREST' }, '*');
                 interestButton.textContent = 'Got it! A specialist will reach out';
                 interestButton.disabled = true;
-                interestButton.style.opacity = '0.85';
             } catch (error) {
                 console.warn('Unable to notify assistant', error);
             }
@@ -717,10 +782,6 @@
 
         createLenderRow({ name: 'Creditor 1', balance: '75000', amount: '2500', frequency: 'weekly' });
         createLenderRow({ name: 'Creditor 2', balance: '50000', amount: '1800', frequency: 'daily' });
-        const initialMetrics = calculateMetrics();
-        applyMetrics(initialMetrics);
-        hasRun = true;
-        updateStatus('Example scenario loaded. Adjust the lenders below and run a fresh estimate.', 'info');
     </script>
 </body>
 </html>
