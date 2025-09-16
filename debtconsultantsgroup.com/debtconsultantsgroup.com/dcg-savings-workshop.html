@@ -43,7 +43,7 @@
         main {
             max-width: 1100px;
             margin: 32px auto 96px;
-            padding: 0 24px;
+            padding: 0 24px 160px;
         }
 
         .dcg-card {
@@ -442,6 +442,15 @@
             .dcg-card {
                 padding: 32px;
             }
+
+            header {
+                padding: 44px 20px 36px;
+            }
+
+            main {
+                padding: 0 20px 140px;
+                margin: 24px auto 80px;
+            }
         }
 
         @media (max-width: 640px) {
@@ -530,14 +539,44 @@
 
     <iframe
         src="dcg-ally-enhanced.html?mode=sidebar"
-        style="position: fixed; bottom: 24px; right: 16px; width: min(400px, 36vw); max-width: 440px; height: min(640px, 94vh); border: none; z-index: 9999;"
+        style="position: fixed; bottom: 32px; right: 16px; width: min(420px, 38vw); max-width: 440px; height: min(640px, 92vh); border: none; border-radius: 22px; box-shadow: 0 28px 60px rgba(15,108,114,0.25); z-index: 9999;"
         title="DCG Assistant Sidebar"
         id="dcgAllyFrameSidebar"
         allow="clipboard-write">
     </iframe>
 
     <script>
+        const compactMedia = window.matchMedia('(max-width: 960px)');
+        let isCompact = compactMedia.matches;
         const contactContainer = document.getElementById('dcg-contact-container');
+        const sidebarFrame = document.getElementById('dcgAllyFrameSidebar');
+
+        function applySidebarLayout(compact) {
+            if (!sidebarFrame) return;
+            if (compact) {
+                sidebarFrame.style.width = 'calc(100vw - 32px)';
+                sidebarFrame.style.left = '16px';
+                sidebarFrame.style.right = '16px';
+                sidebarFrame.style.height = 'min(80vh, 560px)';
+                sidebarFrame.style.bottom = '24px';
+                sidebarFrame.style.borderRadius = '20px';
+            } else {
+                sidebarFrame.style.width = 'min(420px, 38vw)';
+                sidebarFrame.style.left = '';
+                sidebarFrame.style.right = '16px';
+                sidebarFrame.style.height = 'min(640px, 92vh)';
+                sidebarFrame.style.bottom = '32px';
+                sidebarFrame.style.borderRadius = '22px';
+            }
+        }
+
+        applySidebarLayout(isCompact);
+        if (compactMedia.addEventListener) {
+            compactMedia.addEventListener('change', (event) => {
+                isCompact = event.matches;
+                applySidebarLayout(isCompact);
+            });
+        }
         const lenderRowsEl = document.getElementById('dcg-lender-rows');
         const addRowBtn = document.getElementById('dcg-add-lender');
         const runButton = document.getElementById('dcg-run-calculation');
@@ -763,6 +802,9 @@
         }
 
         function launchConfetti() {
+            if (isCompact) {
+                return;
+            }
             const colors = ['#0F6C72', '#0B3C3E', '#F7B500', '#26C485', '#F87060'];
             for (let i = 0; i < 24; i++) {
                 const piece = document.createElement('span');
