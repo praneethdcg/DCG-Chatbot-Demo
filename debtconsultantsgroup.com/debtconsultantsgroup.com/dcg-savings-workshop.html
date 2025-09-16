@@ -39,18 +39,18 @@
         }
 
         main {
-            max-width: 960px;
+            max-width: 1100px;
             margin: -48px auto 64px;
             padding: 0 24px;
         }
 
         .dcg-card {
             background: white;
-            border-radius: 20px;
+            border-radius: 24px;
             box-shadow: 0 24px 60px rgba(15, 108, 114, 0.12);
-            padding: 32px;
+            padding: 36px;
             display: grid;
-            gap: 32px;
+            gap: 36px;
         }
 
         .dcg-card section {
@@ -64,55 +64,121 @@
             color: #0C4A4E;
         }
 
-        .dcg-metric-grid {
-            display: grid;
-            gap: 18px;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        }
-
-        .dcg-metric {
-            padding: 18px;
+        .dcg-contact-card {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            background: rgba(15, 108, 114, 0.08);
+            border: 1px solid rgba(12, 74, 78, 0.15);
             border-radius: 16px;
-            background: linear-gradient(145deg, rgba(15, 108, 114, 0.08), rgba(15, 108, 114, 0.02));
-            border: 1px solid rgba(15, 108, 114, 0.08);
+            padding: 18px;
         }
 
-        .dcg-metric span {
-            display: block;
-            font-size: 14px;
-            color: #335152;
+        .dcg-contact-chip {
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: white;
+            color: #0B3C3E;
+            font-weight: 500;
+            box-shadow: 0 6px 18px rgba(15, 108, 114, 0.12);
         }
 
-        .dcg-metric strong {
+        .dcg-contact-chip span {
             display: block;
-            margin-top: 6px;
-            font-size: 24px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4F6F71;
+        }
+
+        .dcg-contact-missing {
+            background: rgba(220, 53, 69, 0.08);
+            border: 1px solid rgba(220, 53, 69, 0.35);
+            border-radius: 16px;
+            padding: 18px;
+            color: #6B131E;
+        }
+
+        .dcg-lender-builder {
+            gap: 20px;
+        }
+
+        .dcg-lender-rows {
+            display: grid;
+            gap: 16px;
+        }
+
+        .dcg-lender-row {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            background: #F9FBFB;
+            border: 1px solid rgba(12, 74, 78, 0.12);
+            border-radius: 16px;
+            padding: 18px;
+            position: relative;
+        }
+
+        .dcg-lender-field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .dcg-lender-field label {
+            font-size: 13px;
             font-weight: 600;
+            text-transform: uppercase;
+            color: #4F6F71;
+        }
+
+        .dcg-input, .dcg-select {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(12, 74, 78, 0.2);
+            font-size: 15px;
+            background: white;
+        }
+
+        .dcg-remove-row {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            border: none;
+            background: rgba(220, 53, 69, 0.12);
+            color: #8A1C2B;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .dcg-remove-row:hover {
+            background: rgba(220, 53, 69, 0.25);
+        }
+
+        .dcg-add-row {
+            justify-self: start;
+            border: 1px dashed rgba(12, 74, 78, 0.4);
+            background: transparent;
+            color: #0F6C72;
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border 0.2s ease, transform 0.2s ease;
+        }
+
+        .dcg-add-row:hover {
+            border-color: #0F6C72;
+            transform: translateY(-1px);
         }
 
         .dcg-calculator-panel {
             background: #F9FBFB;
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 24px;
-            border: 1px solid rgba(12, 74, 78, 0.08);
-        }
-
-        .dcg-calculator-panel label {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #0B3C3E;
-        }
-
-        .dcg-calculator-panel input,
-        .dcg-calculator-panel select {
-            width: 100%;
-            margin-top: 6px;
-            margin-bottom: 18px;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(12, 74, 78, 0.15);
-            font-size: 15px;
+            border: 1px solid rgba(12, 74, 78, 0.12);
         }
 
         .dcg-calculator-panel button {
@@ -136,14 +202,48 @@
         .dcg-results {
             display: grid;
             gap: 12px;
-            margin-top: 16px;
+            margin-top: 18px;
         }
 
-        .dcg-results div {
-            padding: 14px;
-            border-radius: 12px;
+        .dcg-result-card {
+            padding: 14px 16px;
+            border-radius: 14px;
             background: rgba(15, 108, 114, 0.08);
-            font-weight: 500;
+            border: 1px solid rgba(12, 74, 78, 0.1);
+        }
+
+        .dcg-result-card strong {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .dcg-qualification {
+            padding: 18px;
+            border-radius: 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #0B3C3E;
+        }
+
+        .dcg-qualification.dcg-warning {
+            background: rgba(244, 114, 182, 0.12);
+            border-color: rgba(244, 114, 182, 0.35);
+            color: #832854;
+        }
+
+        .dcg-next-steps {
+            background: rgba(11, 60, 62, 0.06);
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid rgba(11, 60, 62, 0.08);
+        }
+
+        .dcg-next-steps ul {
+            margin: 0;
+            padding-left: 20px;
+            display: grid;
+            gap: 6px;
         }
 
         .dcg-back-link {
@@ -156,13 +256,23 @@
             margin-top: 16px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 920px) {
+            .dcg-lender-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
             main {
                 margin-top: -32px;
             }
 
             .dcg-card {
                 padding: 24px;
+            }
+
+            .dcg-lender-row {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
             }
         }
     </style>
@@ -171,57 +281,68 @@
     <header>
         <a class="dcg-back-link" href="index.html">← Back to Demo Homepage</a>
         <h1>Interactive Savings Workshop</h1>
-        <p>Preview how the DCG savings calculator could look and feel alongside the AI assistant. Enter sample numbers, review projected savings, and keep chatting with the assistant on the right as you explore.</p>
+        <p>Preview how the DCG savings calculator guides prospects. Capture your debt stack, review estimated savings, and keep the AI assistant pinned on the right the entire time.</p>
     </header>
 
     <main>
         <div class="dcg-card">
             <section>
-                <div class="dcg-section-title">Live Benchmark Snapshots</div>
-                <div class="dcg-metric-grid">
-                    <div class="dcg-metric">
-                        <span>Average Negotiated Reduction</span>
-                        <strong>47.5%</strong>
-                    </div>
-                    <div class="dcg-metric">
-                        <span>Time to First Creditor Response</span>
-                        <strong>36 hours</strong>
-                    </div>
-                    <div class="dcg-metric">
-                        <span>Weekly Cash Flow Freed</span>
-                        <strong>$8,750</strong>
-                    </div>
-                </div>
+                <div class="dcg-section-title">Contact Snapshot</div>
+                <div id="dcg-contact-container"></div>
+            </section>
+
+            <section class="dcg-lender-builder">
+                <div class="dcg-section-title">Debt Portfolio Inputs</div>
+                <p style="margin: 0; color: #4F6F71;">Add each creditor you want the calculator to model. Include current balances and the amount you send every payment cycle.</p>
+                <div class="dcg-lender-rows" id="dcg-lender-rows"></div>
+                <button type="button" class="dcg-add-row" id="dcg-add-lender">＋ Add another lender</button>
             </section>
 
             <section class="dcg-calculator-panel">
-                <div class="dcg-section-title">Savings Scenario Builder</div>
-                <label for="debtAmount">Total unsecured business debt</label>
-                <input type="number" id="debtAmount" placeholder="e.g. 125000" value="125000">
+                <div class="dcg-section-title">Savings Projection</div>
+                <p style="margin: 0 0 8px; color: #4F6F71;">We use the same underwriting heuristics from the live onboarding flow:</p>
+                <ul style="margin: 0 0 16px 20px; padding: 0; color: #4F6F71;">
+                    <li>Weekly payment target ≈ 44.6% of current weekly spend</li>
+                    <li>Settlement expectation ≈ 55% of open balances</li>
+                    <li>Program duration is capped at a minimum of 18 months</li>
+                </ul>
+                <button type="button" id="dcg-run-calculation">Run savings estimate</button>
 
-                <label for="paymentComfort">Comfortable weekly payment</label>
-                <input type="number" id="paymentComfort" placeholder="e.g. 2500" value="2500">
-
-                <label for="industry">Industry</label>
-                <select id="industry">
-                    <option value="manufacturing">Manufacturing</option>
-                    <option value="retail">Retail</option>
-                    <option value="services">Professional Services</option>
-                    <option value="construction">Construction</option>
-                </select>
-
-                <button type="button" onclick="simulateSavings()">Estimate Program Impact</button>
-
-                <div class="dcg-results" id="results">
-                    <div>Estimated Settlement: $68,750</div>
-                    <div>Projected Program Length: 28 months</div>
-                    <div>Weekly Payment Target: $1,820</div>
+                <div class="dcg-results" id="dcg-results">
+                    <div class="dcg-result-card">
+                        <strong>Total weekly payments</strong>
+                        <span id="dcg-weekly-total">$0</span>
+                    </div>
+                    <div class="dcg-result-card">
+                        <strong>Recommended weekly payment</strong>
+                        <span id="dcg-weekly-target">$0</span>
+                    </div>
+                    <div class="dcg-result-card">
+                        <strong>Estimated monthly savings</strong>
+                        <span id="dcg-monthly-savings">$0</span>
+                    </div>
+                    <div class="dcg-result-card">
+                        <strong>Estimated settlement amount</strong>
+                        <span id="dcg-settlement">$0</span>
+                    </div>
+                    <div class="dcg-result-card">
+                        <strong>Projected program length</strong>
+                        <span id="dcg-program-length">0 months</span>
+                    </div>
                 </div>
             </section>
 
             <section>
-                <div class="dcg-section-title">What Happens Next?</div>
-                <p>Once the savings calculator confirms eligibility, the AI assistant can schedule a call, collect documents, or transition you to a human closer. Keeping the chat open on the right means prospects never lose momentum while reviewing numbers.</p>
+                <div id="dcg-qualification" class="dcg-qualification dcg-warning">Enter lender data to see if this business qualifies for DCG.</div>
+            </section>
+
+            <section class="dcg-next-steps">
+                <div class="dcg-section-title">Next Steps to Share with the Prospect</div>
+                <ul>
+                    <li>Review the estimated savings on a discovery call within 24 hours.</li>
+                    <li>Collect statements for the lenders listed above so underwriting can confirm the offer.</li>
+                    <li>Use the pinned chat to answer questions or connect the lead with a closer immediately.</li>
+                </ul>
             </section>
         </div>
     </main>
@@ -235,29 +356,221 @@
     </iframe>
 
     <script>
-        function simulateSavings() {
-            const debt = Number(document.getElementById('debtAmount').value || 0);
-            const payment = Number(document.getElementById('paymentComfort').value || 0);
-            const industry = document.getElementById('industry').value;
-
-            if (!debt || debt < 10000) {
-                alert('Enter at least $10,000 in debt to model savings.');
-                return;
+        const contactContainer = document.getElementById('dcg-contact-container');
+        const contactPayload = (() => {
+            try {
+                const raw = sessionStorage.getItem('dcgCalculatorContact');
+                return raw ? JSON.parse(raw) : null;
+            } catch (error) {
+                console.warn('Unable to read contact payload', error);
+                return null;
             }
+        })();
 
-            const reductionRate = 0.45;
-            const settlement = Math.round(debt * (1 - reductionRate));
-            const weeklyTarget = payment ? Math.round(Math.max(payment * 0.7, settlement / 110)) : Math.round(settlement / 110);
-            const durationMonths = Math.max(18, Math.round((settlement / Math.max(weeklyTarget, 1)) * 4));
+        if (contactPayload && (contactPayload.name || contactPayload.phone || contactPayload.email)) {
+            const name = contactPayload.name || 'Prospect';
+            const phone = contactPayload.phone || '—';
+            const email = contactPayload.email || '—';
 
-            const results = document.getElementById('results');
-            results.innerHTML = `
-                <div>Estimated Settlement: $${settlement.toLocaleString()}</div>
-                <div>Projected Program Length: ${durationMonths} months</div>
-                <div>Weekly Payment Target: $${weeklyTarget.toLocaleString()}</div>
-                <div>Industry Benchmark: ${industry === 'construction' ? 'Higher risk, adjust to 50% reduction' : 'Comparable clients save 42-52%'}
+            contactContainer.innerHTML = `
+                <div class="dcg-contact-card">
+                    <div class="dcg-contact-chip">
+                        <span>Name</span>
+                        ${name}
+                    </div>
+                    <div class="dcg-contact-chip">
+                        <span>Phone</span>
+                        ${formatReadablePhone(phone)}
+                    </div>
+                    <div class="dcg-contact-chip">
+                        <span>Email</span>
+                        ${email}
+                    </div>
+                    <div class="dcg-contact-chip">
+                        <span>Captured</span>
+                        ${new Date(contactPayload.timestamp || Date.now()).toLocaleString()}
+                    </div>
+                </div>
+            `;
+        } else {
+            contactContainer.innerHTML = `
+                <div class="dcg-contact-missing">
+                    We couldn't find contact info for this session. Pop back to the assistant and share name, email, and phone so a specialist can follow up on these numbers.
+                </div>
             `;
         }
+
+        const lenderRowsEl = document.getElementById('dcg-lender-rows');
+        const addRowBtn = document.getElementById('dcg-add-lender');
+        const runButton = document.getElementById('dcg-run-calculation');
+
+        function formatReadablePhone(phone) {
+            const digits = (phone || '').replace(/\D/g, '');
+            if (digits.length === 10) {
+                return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+            }
+            return phone || '—';
+        }
+
+        function createLenderRow(initial = {}) {
+            const row = document.createElement('div');
+            row.className = 'dcg-lender-row';
+
+            row.innerHTML = `
+                <div class="dcg-lender-field">
+                    <label>Creditor</label>
+                    <input type="text" class="dcg-input" data-field="name" placeholder="e.g. Fundbox" value="${initial.name || ''}">
+                </div>
+                <div class="dcg-lender-field">
+                    <label>Current balance</label>
+                    <input type="text" class="dcg-input" data-field="balance" placeholder="$75,000" value="${initial.balance || ''}">
+                </div>
+                <div class="dcg-lender-field">
+                    <label>Payment frequency</label>
+                    <select class="dcg-select" data-field="frequency">
+                        <option value="daily" ${initial.frequency === 'daily' ? 'selected' : ''}>Daily (ACH)</option>
+                        <option value="weekly" ${!initial.frequency || initial.frequency === 'weekly' ? 'selected' : ''}>Weekly</option>
+                        <option value="biweekly" ${initial.frequency === 'biweekly' ? 'selected' : ''}>Biweekly</option>
+                        <option value="monthly" ${initial.frequency === 'monthly' ? 'selected' : ''}>Monthly</option>
+                    </select>
+                </div>
+                <div class="dcg-lender-field">
+                    <label>Payment amount</label>
+                    <input type="text" class="dcg-input" data-field="amount" placeholder="$2,500" value="${initial.amount || ''}">
+                </div>
+                <div class="dcg-lender-field">
+                    <label>Notes</label>
+                    <input type="text" class="dcg-input" data-field="notes" placeholder="Optional (e.g. MCA)">
+                </div>
+                <button type="button" class="dcg-remove-row" title="Remove lender">Remove</button>
+            `;
+
+            const removeButton = row.querySelector('.dcg-remove-row');
+            removeButton.addEventListener('click', () => {
+                if (lenderRowsEl.children.length > 1) {
+                    row.remove();
+                    runEstimates();
+                }
+            });
+
+            lenderRowsEl.appendChild(row);
+        }
+
+        function parseCurrency(value) {
+            if (!value) return 0;
+            const num = parseFloat(value.toString().replace(/[^0-9.]/g, ''));
+            return Number.isFinite(num) ? num : 0;
+        }
+
+        function convertToWeekly(amount, frequency) {
+            switch (frequency) {
+                case 'daily':
+                    return amount * 5; // business days
+                case 'biweekly':
+                    return amount / 2;
+                case 'monthly':
+                    return amount / 4.33;
+                default:
+                    return amount;
+            }
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: 0
+            }).format(Math.round(value || 0));
+        }
+
+        function qualificationMessage(totalBalance, weeklyTarget) {
+            if (totalBalance === 0) {
+                return {
+                    text: 'Enter lender balances above $25,000 to test DCG eligibility.',
+                    warning: true
+                };
+            }
+
+            if (totalBalance < 25000) {
+                return {
+                    text: `This stack totals ${formatCurrency(totalBalance)}. We typically approve businesses with $25K+ in unsecured debt. Consider adding additional lenders or offering partner programs.`,
+                    warning: true
+                };
+            }
+
+            if (weeklyTarget < 500) {
+                return {
+                    text: `Weekly payments can land near ${formatCurrency(weeklyTarget)}. Flag underwriting to confirm we can keep payments above minimum thresholds.`,
+                    warning: false
+                };
+            }
+
+            return {
+                text: `Great news! This portfolio qualifies for a program estimate. Share the results with the prospect and schedule a follow-up to finalize docs.`,
+                warning: false
+            };
+        }
+
+        function runEstimates() {
+            const rows = Array.from(lenderRowsEl.querySelectorAll('.dcg-lender-row'));
+
+            let totalBalance = 0;
+            let totalWeeklyPayments = 0;
+            let lenderCount = 0;
+
+            rows.forEach(row => {
+                const balance = parseCurrency(row.querySelector('[data-field="balance"]').value);
+                const amount = parseCurrency(row.querySelector('[data-field="amount"]').value);
+                const frequency = row.querySelector('[data-field="frequency"]').value;
+
+                if (balance > 0 || amount > 0) {
+                    lenderCount += 1;
+                }
+
+                totalBalance += balance;
+                totalWeeklyPayments += convertToWeekly(amount, frequency);
+            });
+
+            const weeklyTarget = totalWeeklyPayments * 0.4463;
+            const weeklySavings = Math.max(totalWeeklyPayments - weeklyTarget, 0);
+            const monthlySavings = weeklySavings * 4.33;
+            const estimatedSettlement = totalBalance * 0.55;
+            const programLengthMonths = Math.max(18, Math.round((estimatedSettlement / Math.max(weeklyTarget, 1)) * 4));
+
+            document.getElementById('dcg-weekly-total').textContent = formatCurrency(totalWeeklyPayments);
+            document.getElementById('dcg-weekly-target').textContent = formatCurrency(weeklyTarget);
+            document.getElementById('dcg-monthly-savings').textContent = formatCurrency(monthlySavings);
+            document.getElementById('dcg-settlement').textContent = formatCurrency(estimatedSettlement);
+            document.getElementById('dcg-program-length').textContent = `${programLengthMonths} months`;
+
+            const qual = qualificationMessage(totalBalance, weeklyTarget);
+            const qualificationEl = document.getElementById('dcg-qualification');
+            qualificationEl.textContent = qual.text;
+            qualificationEl.classList.toggle('dcg-warning', qual.warning);
+
+            return { totalBalance, lenderCount };
+        }
+
+        addRowBtn.addEventListener('click', () => {
+            createLenderRow();
+            runEstimates();
+        });
+
+        runButton.addEventListener('click', () => runEstimates());
+
+        lenderRowsEl.addEventListener('input', debounce(runEstimates, 200));
+
+        function debounce(fn, delay) {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => fn.apply(null, args), delay);
+            };
+        }
+
+        createLenderRow({ name: 'Creditor 1', balance: '75000', amount: '2500', frequency: 'weekly' });
+        createLenderRow({ name: 'Creditor 2', balance: '50000', amount: '1800', frequency: 'daily' });
+        runEstimates();
     </script>
 </body>
 </html>

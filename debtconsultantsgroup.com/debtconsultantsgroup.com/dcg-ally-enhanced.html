@@ -909,6 +909,8 @@
             hasAskedAboutQualification: false,
             hasAskedAboutSavings: false,
             hasProvidedContact: false,
+            awaitingCalculatorAccess: false,
+            contactDetails: null,
             userIntent: null
         };
         let hasShownBar = false;
@@ -1477,6 +1479,21 @@
                         </div>
                     `, true);
                 } else if (lower.includes('calculator') || lower.includes('demo')) {
+                    if (!conversationContext.hasProvidedContact) {
+                        conversationContext.awaitingCalculatorAccess = true;
+                        persistConversation();
+
+                        addMessage('bot', `
+                            <div>
+                                <p><strong>Let's unlock the savings workspace!</strong></p>
+                                <p style="margin-top: 8px;">Before I open the calculator, please share the best contact details so a specialist can follow up with your results.</p>
+                            </div>
+                        `, true);
+
+                        showContactForm();
+                        return;
+                    }
+
                     addMessage('bot', `
                         <div>
                             <strong>📊 DCG Savings Workshop</strong><br><br>
@@ -1756,28 +1773,61 @@
             // Hide form
             event.target.parentElement.style.display = 'none';
 
-            // Show success message
-            addMessage('bot', `
-                <div class="dcg-success-msg">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                    </svg>
-                    <div>
-                        <strong>🎉 Success! Consultation Scheduled</strong><br>
-                        A DCG specialist will call you within 2 hours (during business hours).<br>
-                        <small>Thank you for your submission!</small>
-                    </div>
-                </div>
-                <p style="margin-top: 12px;">While you wait, feel free to explore our calculator or ask me any questions!</p>
-                <div class="dcg-inline-actions" style="margin-top: 12px;">
-                    <button class="dcg-inline-action" onclick="window.open('https://mcarelief.debtconsultantsgroup.com/calculator/form?utm_source=dcg-chatbot&utm_medium=ally&utm_campaign=post-consult-cta', '_blank')">
-                        📊 Open savings calculator
-                    </button>
-                </div>
-            `, true);
+            const awaitingCalculator = conversationContext.awaitingCalculatorAccess;
+            const firstName = name.split(' ')[0] || name;
 
             conversationContext.hasProvidedContact = true;
+            conversationContext.awaitingCalculatorAccess = false;
+            conversationContext.contactDetails = { name, phone, email };
             persistConversation();
+
+            try {
+                const contactPayload = { name, phone, email, timestamp: Date.now() };
+                sessionStorage.setItem('dcgCalculatorContact', JSON.stringify(contactPayload));
+            } catch (error) {
+                console.warn('Unable to persist calculator contact', error);
+            }
+
+            if (awaitingCalculator) {
+                addMessage('bot', `
+                    <div class="dcg-success-msg">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        <div>
+                            <strong>You're all set, ${firstName}!</strong><br>
+                            I saved your contact details so we can review the numbers together.<br>
+                            <small>Let's open the savings workspace right now.</small>
+                        </div>
+                    </div>
+                    <div class="dcg-inline-actions" style="margin-top: 12px;">
+                        <button class="dcg-inline-action" onclick="navigateToSavingsWorkspace()">
+                            🚀 Launch savings workspace
+                        </button>
+                    </div>
+                `, true);
+
+                setTimeout(() => navigateToSavingsWorkspace(), 900);
+            } else {
+                addMessage('bot', `
+                    <div class="dcg-success-msg">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        <div>
+                            <strong>🎉 Success! Consultation Scheduled</strong><br>
+                            A DCG specialist will call you within 2 hours (during business hours).<br>
+                            <small>Thank you for your submission!</small>
+                        </div>
+                    </div>
+                    <p style="margin-top: 12px;">While you wait, feel free to explore our calculator or ask me any questions!</p>
+                    <div class="dcg-inline-actions" style="margin-top: 12px;">
+                        <button class="dcg-inline-action" onclick="window.open('https://mcarelief.debtconsultantsgroup.com/calculator/form?utm_source=dcg-chatbot&utm_medium=ally&utm_campaign=post-consult-cta', '_blank')">
+                            📊 Open savings calculator
+                        </button>
+                    </div>
+                `, true);
+            }
         }
 
         // Microphone placeholder function
