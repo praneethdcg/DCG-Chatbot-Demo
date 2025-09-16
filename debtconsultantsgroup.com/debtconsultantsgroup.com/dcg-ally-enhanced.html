@@ -927,6 +927,20 @@
             document.body.classList.add('sidebar-mode');
         }
 
+        window.addEventListener('message', (event) => {
+            if (!event || !event.data) return;
+
+            if (event.data.type === 'DCG_INTEREST') {
+                openChat();
+
+                setTimeout(() => {
+                    const interestMessage = 'Connect me with a specialist about these savings';
+                    addMessage('user', interestMessage);
+                    processUserMessage(interestMessage);
+                }, 200);
+            }
+        });
+
         if (!isSidebarMode) {
             // Show chatbot after scrolling
             window.addEventListener('scroll', function() {
