@@ -139,6 +139,46 @@
             box-shadow: 0 2px 8px rgba(15, 108, 114, 0.3);
         }
 
+        .dcg-mic-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #0F6C72;
+            color: #0F6C72;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+        }
+
+        .dcg-mic-button:hover {
+            background: #0F6C72;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .dcg-mic-button.listening {
+            animation: micPulse 1.5s infinite;
+            background: #DC2626;
+            border-color: #DC2626;
+            color: white;
+        }
+
+        @keyframes micPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+            }
+        }
+
         .dcg-bottom-send:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 12px rgba(15, 108, 114, 0.4);
@@ -472,7 +512,7 @@
         .dcg-input-wrapper {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             background: #F8F9FA;
             border-radius: 28px;
             padding: 8px 8px 8px 20px;
@@ -728,6 +768,12 @@
                         placeholder="👋 Hi, welcome to DCG! Ask me anything about debt relief..."
                         onkeypress="handleBottomInput(event)"
                     />
+                    <button class="dcg-mic-button" onclick="toggleMicrophone(event, 'bottom')" type="button" title="Voice input (coming soon)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                    </button>
                     <button class="dcg-bottom-send" onclick="sendFromBottom()" type="button">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
                             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -795,6 +841,12 @@
                     placeholder="Ask DCG Assistant anything about debt relief..."
                     autocomplete="off"
                 />
+                <button class="dcg-mic-button" onclick="toggleMicrophone(event, 'modal')" type="button" title="Voice input (coming soon)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                </button>
                 <button type="submit" class="dcg-send-button">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
                         <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -1503,6 +1555,31 @@
             `, true);
 
             conversationContext.hasProvidedContact = true;
+        }
+
+        // Microphone placeholder function
+        function toggleMicrophone(event, location) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const micButton = event.currentTarget;
+            const isListening = micButton.classList.contains('listening');
+
+            if (isListening) {
+                micButton.classList.remove('listening');
+                // Future: Stop recording
+                console.log('Voice input stopped');
+            } else {
+                micButton.classList.add('listening');
+                // Future: Start recording
+                console.log('Voice input started - Coming soon!');
+
+                // Simulate stopping after 3 seconds for demo
+                setTimeout(() => {
+                    micButton.classList.remove('listening');
+                    addMessage('bot', '🎤 Voice input feature coming soon! For now, please type your message.');
+                }, 2000);
+            }
         }
     </script>
 </body>
