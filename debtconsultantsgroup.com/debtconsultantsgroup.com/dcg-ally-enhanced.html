@@ -66,7 +66,7 @@
             padding: 20px;
             transition: all 0.3s ease;
             position: relative;
-            overflow: hidden;
+            overflow: visible; /* Changed to visible for smooth button reveal */
         }
 
         .dcg-bar-container::before {
@@ -175,6 +175,18 @@
             padding: 0 0 5px 0;
             justify-content: center;
             flex-wrap: wrap;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Show buttons on hover */
+        #dcg-bottom-bar:hover .dcg-quick-actions-bar,
+        .dcg-bar-container:hover .dcg-quick-actions-bar {
+            max-height: 60px;
+            opacity: 1;
+            padding: 12px 0 5px 0;
         }
 
         .dcg-quick-btn {
@@ -599,6 +611,40 @@
             animation: pulse 2s infinite;
         }
 
+        /* Hint indicator for hover */
+        .dcg-hover-hint {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            opacity: 0;
+            animation: hintPulse 2s infinite;
+            transition: opacity 0.3s ease;
+        }
+
+        #dcg-bottom-bar.visible .dcg-hover-hint {
+            opacity: 1;
+        }
+
+        #dcg-bottom-bar:hover .dcg-hover-hint {
+            opacity: 0;
+        }
+
+        @keyframes hintPulse {
+            0%, 100% {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateX(-50%) scaleX(1);
+            }
+            50% {
+                background: rgba(255, 255, 255, 0.6);
+                transform: translateX(-50%) scaleX(1.5);
+            }
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             #dcg-chat-modal {
@@ -679,7 +725,7 @@
                         type="text"
                         class="dcg-bottom-input"
                         id="bottomInput"
-                        placeholder="👋 Hi, welcome to DCG! Ask me how much you can save or connect with a sales rep..."
+                        placeholder="👋 Hi, welcome to DCG! Ask me anything about debt relief..."
                         onkeypress="handleBottomInput(event)"
                     />
                     <button class="dcg-bottom-send" onclick="sendFromBottom()" type="button">
@@ -689,6 +735,7 @@
                     </button>
                 </div>
             </div>
+            <div class="dcg-hover-hint"></div>
             <div class="dcg-quick-actions-bar">
                 <button class="dcg-quick-btn" onclick="openChatWithAction('sales')">
                     Speak to Sales Rep
@@ -788,6 +835,15 @@
                 hasShownBar = true;
                 const bottomBar = document.getElementById('dcg-bottom-bar');
                 bottomBar.classList.add('visible');
+
+                // Show a subtle animation hint that buttons are available
+                setTimeout(() => {
+                    const container = document.querySelector('.dcg-bar-container');
+                    container.style.transform = 'translateY(-2px)';
+                    setTimeout(() => {
+                        container.style.transform = 'translateY(0)';
+                    }, 300);
+                }, 1000);
             }
         }, 3000);
 
