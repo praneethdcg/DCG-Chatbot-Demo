@@ -765,7 +765,7 @@
                         type="text"
                         class="dcg-bottom-input"
                         id="bottomInput"
-                        placeholder="👋 Hi, welcome to DCG! Ask me anything about debt relief..."
+                        placeholder="👋 Hi, welcome to DCG! Curious what DCG can negotiate for you? Tell me your biggest debt challenge and I'll map it out."
                         onkeypress="handleBottomInput(event)"
                     />
                     <button class="dcg-mic-button" onclick="toggleMicrophone(event, 'bottom')" type="button" title="Voice input (coming soon)">
@@ -838,7 +838,7 @@
                     type="text"
                     class="dcg-chat-input"
                     id="chatInput"
-                    placeholder="Ask DCG Assistant anything about debt relief..."
+                    placeholder="Curious what DCG can negotiate for you? Tell me your biggest debt challenge and I'll map it out."
                     autocomplete="off"
                 />
                 <button class="dcg-mic-button" onclick="toggleMicrophone(event, 'modal')" type="button" title="Voice input (coming soon)">
@@ -1552,6 +1552,11 @@
                     </div>
                 </div>
                 <p style="margin-top: 12px;">While you wait, feel free to explore our calculator or ask me any questions!</p>
+                <div class="dcg-inline-actions" style="margin-top: 12px;">
+                    <button class="dcg-inline-action" onclick="window.open('https://mcarelief.debtconsultantsgroup.com/calculator', '_blank')">
+                        📊 Open savings calculator
+                    </button>
+                </div>
             `, true);
 
             conversationContext.hasProvidedContact = true;
