@@ -761,6 +761,7 @@
         let isModalOpen = false;
         let messages = [];
         let isTyping = false;
+        let isProcessing = false; // Prevent race conditions
         let conversationContext = {
             hasAskedAboutQualification: false,
             hasAskedAboutSavings: false,
@@ -768,6 +769,9 @@
             userIntent: null
         };
         let hasShownBar = false;
+
+        // Limit message history to prevent memory leak
+        const MAX_MESSAGES = 100;
 
         // Show chatbot after scrolling
         window.addEventListener('scroll', function() {
@@ -811,6 +815,9 @@
 
         // Open chat with specific action
         function openChatWithAction(action) {
+            // Prevent multiple simultaneous actions
+            if (isProcessing) return;
+
             openChat();
 
             setTimeout(() => {
@@ -926,6 +933,9 @@
 
         // Handle inline action buttons
         function handleInlineAction(action) {
+            // Prevent race conditions
+            if (isProcessing) return;
+
             let message = '';
             switch(action) {
                 case 'struggling':
@@ -1007,8 +1017,13 @@
             messageDiv.appendChild(wrapperDiv);
             container.appendChild(messageDiv);
 
-            // Save message
+            // Save message with memory limit
             messages.push({ type, content });
+
+            // Prevent memory leak by limiting message history
+            if (messages.length > MAX_MESSAGES) {
+                messages = messages.slice(-MAX_MESSAGES);
+            }
 
             // Scroll to bottom
             container.scrollTop = container.scrollHeight;
@@ -1050,6 +1065,10 @@
 
         // Process user message with enhanced intelligence
         function processUserMessage(message) {
+            // Prevent processing multiple messages at once
+            if (isProcessing) return;
+            isProcessing = true;
+
             showTyping();
 
             // Dynamic typing delay
@@ -1057,6 +1076,7 @@
 
             setTimeout(() => {
                 hideTyping();
+                isProcessing = false; // Reset processing flag
 
                 const lower = message.toLowerCase();
 
@@ -1371,9 +1391,9 @@
                     <div class="dcg-form-title">Please enter your contact information:</div>
                     <form onsubmit="submitContactForm(event, '${formId}')">
                         <div class="dcg-form-grid">
-                            <input type="text" class="dcg-form-field" placeholder="Full Name" required id="${formId}_name">
-                            <input type="tel" class="dcg-form-field" placeholder="Phone Number" required id="${formId}_phone">
-                            <input type="email" class="dcg-form-field" placeholder="Email Address" required id="${formId}_email">
+                            <input type="text" class="dcg-form-field" placeholder="Full Name" required id="${formId}_name" maxlength="100">
+                            <input type="tel" class="dcg-form-field" placeholder="Phone Number" required id="${formId}_phone" maxlength="20">
+                            <input type="email" class="dcg-form-field" placeholder="Email Address" required id="${formId}_email" maxlength="100">
                         </div>
                         <button type="submit" class="dcg-form-submit">Get My Free Consultation</button>
                     </form>
@@ -1385,9 +1405,28 @@
         function submitContactForm(event, formId) {
             event.preventDefault();
 
-            const name = document.getElementById(formId + '_name').value;
-            const phone = document.getElementById(formId + '_phone').value;
-            const email = document.getElementById(formId + '_email').value;
+            const name = document.getElementById(formId + '_name').value.trim();
+            const phone = document.getElementById(formId + '_phone').value.trim();
+            const email = document.getElementById(formId + '_email').value.trim();
+
+            // Enhanced validation
+            const phoneRegex = /^[\d\s\(\)\-\+]+$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!name || name.length < 2) {
+                alert('Please enter a valid name');
+                return;
+            }
+
+            if (!phoneRegex.test(phone) || phone.replace(/\D/g, '').length < 10) {
+                alert('Please enter a valid phone number');
+                return;
+            }
+
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address');
+                return;
+            }
 
             // Hide form
             event.target.parentElement.style.display = 'none';
@@ -1401,7 +1440,7 @@
                     <div>
                         <strong>🎉 Success! Consultation Scheduled</strong><br>
                         A DCG specialist will call you within 2 hours (during business hours).<br>
-                        <small>Contact: ${name} | ${phone} | ${email}</small>
+                        <small>Thank you for your submission!</small>
                     </div>
                 </div>
                 <p style="margin-top: 12px;">While you wait, feel free to explore our calculator or ask me any questions!</p>
