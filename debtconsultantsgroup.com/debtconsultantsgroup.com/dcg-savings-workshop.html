@@ -379,6 +379,29 @@
             margin-top: 18px;
         }
 
+        .dcg-chat-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 16px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            color: white;
+            font-size: 24px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 16px 32px rgba(15,108,114,0.28);
+            z-index: 10001;
+            cursor: pointer;
+        }
+
+        .dcg-chat-toggle.dcg-open {
+            background: linear-gradient(135deg, #0B3C3E, #062325);
+        }
+
         .dcg-confetti-piece {
             position: absolute;
             width: 10px;
@@ -545,11 +568,14 @@
         allow="clipboard-write">
     </iframe>
 
+    <button id="dcgChatToggle" class="dcg-chat-toggle" aria-label="Open chat">💬</button>
+
     <script>
         const compactMedia = window.matchMedia('(max-width: 960px)');
         let isCompact = compactMedia.matches;
         const contactContainer = document.getElementById('dcg-contact-container');
         const sidebarFrame = document.getElementById('dcgAllyFrameSidebar');
+        const chatToggle = document.getElementById('dcgChatToggle');
 
         function applySidebarLayout(compact) {
             if (!sidebarFrame) return;
@@ -560,6 +586,11 @@
                 sidebarFrame.style.height = 'min(80vh, 560px)';
                 sidebarFrame.style.bottom = '24px';
                 sidebarFrame.style.borderRadius = '20px';
+                sidebarFrame.style.display = 'none';
+                if (chatToggle) {
+                    chatToggle.style.display = 'flex';
+                    chatToggle.classList.remove('dcg-open');
+                }
             } else {
                 sidebarFrame.style.width = 'min(420px, 38vw)';
                 sidebarFrame.style.left = '';
@@ -567,6 +598,11 @@
                 sidebarFrame.style.height = 'min(640px, 92vh)';
                 sidebarFrame.style.bottom = '32px';
                 sidebarFrame.style.borderRadius = '22px';
+                sidebarFrame.style.display = 'block';
+                if (chatToggle) {
+                    chatToggle.style.display = 'none';
+                    chatToggle.classList.remove('dcg-open');
+                }
             }
         }
 
@@ -575,6 +611,19 @@
             compactMedia.addEventListener('change', (event) => {
                 isCompact = event.matches;
                 applySidebarLayout(isCompact);
+            });
+        }
+
+        if (chatToggle) {
+            chatToggle.addEventListener('click', () => {
+                const isVisible = sidebarFrame.style.display === 'block';
+                if (isVisible) {
+                    sidebarFrame.style.display = 'none';
+                    chatToggle.classList.remove('dcg-open');
+                } else {
+                    sidebarFrame.style.display = 'block';
+                    chatToggle.classList.add('dcg-open');
+                }
             });
         }
         const lenderRowsEl = document.getElementById('dcg-lender-rows');
@@ -835,6 +884,12 @@
         });
 
         interestButton.addEventListener('click', () => {
+            if (isCompact && sidebarFrame && sidebarFrame.style.display !== 'block') {
+                sidebarFrame.style.display = 'block';
+                if (chatToggle) {
+                    chatToggle.classList.add('dcg-open');
+                }
+            }
             try {
                 const frame = document.getElementById('dcgAllyFrameSidebar');
                 frame.contentWindow.postMessage({ type: 'DCG_INTEREST' }, '*');
