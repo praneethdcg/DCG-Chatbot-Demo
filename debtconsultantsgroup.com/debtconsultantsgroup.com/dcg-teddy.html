@@ -1116,6 +1116,15 @@
             document.body.classList.add('sidebar-mode');
         }
 
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function applyMobileLayout(isMobile) {
             if (isSidebarMode) return;
             if (isMobile) {
@@ -2047,54 +2056,248 @@
         }
 
         // Submit contact form
-        function submitContactForm(event, formId) {
+        async function submitContactForm(event, formId) {
             event.preventDefault();
 
-            const name = document.getElementById(formId + '_name').value.trim();
-            const businessName = document.getElementById(formId + '_business').value.trim();
-            const phone = document.getElementById(formId + '_phone').value.trim();
-            const email = document.getElementById(formId + '_email').value.trim();
+            if (isProcessing) return;
+
+            const form = event.target;
+            if (!form || form.dataset.processing === 'true') {
+                return;
+            }
+
+            const nameField = document.getElementById(formId + '_name');
+            const businessField = document.getElementById(formId + '_business');
+            const phoneField = document.getElementById(formId + '_phone');
+            const emailField = document.getElementById(formId + '_email');
+
+            const name = nameField ? nameField.value.trim() : '';
+            const businessName = businessField ? businessField.value.trim() : '';
+            const phone = phoneField ? phoneField.value.trim() : '';
+            const email = emailField ? emailField.value.trim() : '';
 
             // Enhanced validation
             const phoneRegex = /^[\d\s\(\)\-\+]+$/;
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
             if (!name || name.length < 2) {
-                alert('Please enter a valid name');
+                addMessage('bot', `
+                    <div>
+                        <strong>Could you share your name?</strong><br>
+                        Please enter at least two characters so I know how to address you.
+                    </div>
+                `, true);
+                if (nameField) nameField.focus();
                 return;
             }
 
             if (!businessName || businessName.length < 2) {
-                alert('Please enter a valid business name');
+                addMessage('bot', `
+                    <div>
+                        <strong>Let's confirm your business name.</strong><br>
+                        Please add at least two characters so our specialist reaches the right team.
+                    </div>
+                `, true);
+                if (businessField) businessField.focus();
                 return;
             }
 
             if (!phoneRegex.test(phone) || phone.replace(/\D/g, '').length < 10) {
-                alert('Please enter a valid phone number');
+                addMessage('bot', `
+                    <div>
+                        <strong>I couldn't verify that phone number.</strong><br>
+                        Please include a valid number with at least ten digits so we can get in touch.
+                    </div>
+                `, true);
+                if (phoneField) phoneField.focus();
                 return;
             }
 
             if (!emailRegex.test(email)) {
-                alert('Please enter a valid email address');
+                addMessage('bot', `
+                    <div>
+                        <strong>Almost there!</strong><br>
+                        Please share a valid email address so we can send a confirmation.
+                    </div>
+                `, true);
+                if (emailField) emailField.focus();
                 return;
             }
 
-            // Hide form
-            event.target.parentElement.style.display = 'none';
+            const submitButton = form.querySelector('.dcg-form-submit');
+            const originalButtonText = submitButton ? submitButton.textContent : '';
+
+            const startLoadingState = () => {
+                form.dataset.processing = 'true';
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.classList.add('disabled');
+                    submitButton.textContent = 'Submitting...';
+                }
+            };
+
+            const resetLoadingState = () => {
+                delete form.dataset.processing;
+
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('disabled');
+                    submitButton.textContent = originalButtonText;
+                }
+            };
+
+            startLoadingState();
+            isProcessing = true;
 
             const awaitingCalculator = conversationContext.awaitingCalculatorAccess;
             const firstName = name.split(' ')[0] || name;
+            const safeFirstName = escapeHtml(firstName);
+            const requestPayload = { name, businessName, phone, email };
 
-            conversationContext.hasProvidedContact = true;
-            conversationContext.awaitingCalculatorAccess = false;
-            conversationContext.contactDetails = { name, businessName, phone, email };
-            persistConversation();
+            let timeoutId;
+            let submissionSucceeded = false;
+            let leadId = null;
 
             try {
-                const contactPayload = { name, businessName, phone, email, timestamp: Date.now() };
-                sessionStorage.setItem('dcgCalculatorContact', JSON.stringify(contactPayload));
+                const controller = new AbortController();
+                timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                const { hostname, port } = window.location;
+                const endpointCandidates = [];
+                const isStaticPreview = port === '8000' || hostname === '127.0.0.1';
+
+                if (isStaticPreview) {
+                    endpointCandidates.push('http://localhost:3000/api/salesforce');
+                }
+
+                endpointCandidates.push('/api/salesforce');
+
+                let responseBody = null;
+                let lastError = null;
+                let lastStatus = null;
+                let usedEndpoint = null;
+
+                for (const endpoint of endpointCandidates) {
+                    usedEndpoint = endpoint;
+
+                    try {
+                        const fetchOptions = {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(requestPayload),
+                            signal: controller.signal
+                        };
+
+                        if (endpoint.startsWith('http')) {
+                            fetchOptions.mode = 'cors';
+                        }
+
+                        const response = await fetch(endpoint, fetchOptions);
+                        lastStatus = response.status;
+
+                        try {
+                            responseBody = await response.json();
+                        } catch (parseError) {
+                            console.warn('Unable to parse Salesforce response from', endpoint, parseError);
+                            lastError = new Error('Unable to parse Salesforce response');
+                            continue;
+                        }
+
+                        if (!response.ok || !responseBody || !responseBody.success) {
+                            const apiMessage = responseBody && responseBody.error
+                                ? responseBody.error
+                                : `Request failed with status ${response.status}`;
+                            lastError = new Error(apiMessage);
+                            continue;
+                        }
+
+                        console.log('Salesforce lead submitted via', endpoint);
+                        break;
+                    } catch (fetchError) {
+                        lastError = fetchError;
+                        console.warn('Salesforce submission attempt failed for', endpoint, fetchError);
+                    }
+                }
+
+                if (!responseBody || !responseBody.success) {
+                    const message = lastError ? lastError.message : `Salesforce submission failed (status ${lastStatus})`;
+                    throw new Error(message);
+                }
+
+                leadId = responseBody.leadId || null;
+
+                if (!leadId) {
+                    throw new Error('Missing lead ID from Salesforce response.');
+                }
+
+                conversationContext.hasProvidedContact = true;
+                conversationContext.awaitingCalculatorAccess = false;
+                conversationContext.contactDetails = { name, businessName, phone, email, leadId };
+
+                const formMarkupIdentifier = `submitContactForm(event, '${formId}')`;
+                const formMessage = form.closest('.dcg-message');
+                if (formMessage) {
+                    formMessage.remove();
+                }
+
+                messages = messages.filter((message) => {
+                    if (!message || !message.isHTML || typeof message.content !== 'string') {
+                        return true;
+                    }
+
+                    return !message.content.includes(formMarkupIdentifier);
+                });
+
+                try {
+                    persistConversation();
+                } catch (error) {
+                    console.warn('Unable to persist conversation state', error);
+                }
+
+                try {
+                    const contactPayload = { ...conversationContext.contactDetails, timestamp: Date.now() };
+                    sessionStorage.setItem('dcgCalculatorContact', JSON.stringify(contactPayload));
+                } catch (error) {
+                    console.warn('Unable to persist calculator contact', error);
+                }
+
+                submissionSucceeded = true;
+
+                const formContainer = form.parentElement;
+                if (formContainer) {
+                    formContainer.style.display = 'none';
+                }
             } catch (error) {
-                console.warn('Unable to persist calculator contact', error);
+                const timedOut = error.name === 'AbortError';
+                const userMessage = timedOut
+                    ? 'The request timed out before we could confirm your details. Please try again in a few seconds.'
+                    : 'We were unable to save your information just now. Please retry, or we can connect you with a specialist shortly.';
+
+                console.error('Salesforce lead submission failed', {
+                    message: error.message,
+                    timedOut
+                });
+
+                addMessage('bot', `
+                    <div>
+                        <strong>Thanks for your patience, ${safeFirstName}.</strong><br>
+                        ${userMessage}
+                    </div>
+                `, true);
+
+                resetLoadingState();
+                return;
+            } finally {
+                clearTimeout(timeoutId);
+                isProcessing = false;
+            }
+
+            if (!submissionSucceeded) {
+                resetLoadingState();
+                return;
             }
 
             if (awaitingCalculator) {
@@ -2104,7 +2307,7 @@
                             <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                         </svg>
                         <div>
-                            <strong>You're all set, ${firstName}!</strong><br>
+                            <strong>You're all set, ${safeFirstName}!</strong><br>
                             I'm opening the savings calculator for you now, and someone from our team will reach out within the next couple of hours.
                         </div>
                     </div>
@@ -2183,14 +2386,57 @@
                 }
             }
 
+            const leadId = conversationContext?.contactDetails?.leadId;
+
+            if (!leadId) {
+                console.warn('handleBookMeeting: Missing lead ID for personalized booking link.', conversationContext?.contactDetails);
+
+                addMessage('bot', `
+                    <div>
+                        <strong>Let's finish setting up your meeting.</strong><br>
+                        I couldn't locate your personalized scheduling link just yet. Reply here and we'll connect you with a specialist right away, or visit our contact page to reach us directly.
+                    </div>
+                `, true);
+
+                return;
+            }
+
+            const bookingUrl = `https://book.debtconsultantsgroup.com/?utm_source=salesforce&utm_medium=sms&utm_campaign=us&id1=${encodeURIComponent(leadId)}`;
+
+            console.log('handleBookMeeting: Opening booking URL for lead', leadId);
+
+            let redirectBlocked = false;
+
+            try {
+                const openedWindow = window.open(bookingUrl, '_blank', 'noopener');
+                if (!openedWindow) {
+                    redirectBlocked = true;
+                    console.warn('handleBookMeeting: Browser blocked the booking tab.');
+                }
+            } catch (error) {
+                redirectBlocked = true;
+                console.error('handleBookMeeting: Failed to open personalized booking URL.', error);
+            }
+
+            if (redirectBlocked) {
+                addMessage('bot', `
+                    <div>
+                        <strong>Your scheduling link is ready.</strong><br>
+                        Please <a href="${bookingUrl}" target="_blank" rel="noopener">open the booking page</a> to choose your time. If you need help, reply here and we'll connect you with a specialist right away, or visit our contact page for more options.
+                    </div>
+                `, true);
+
+                return;
+            }
+
             addMessage('bot', `
                 <div class="dcg-success-msg">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                     </svg>
                     <div>
-                        <strong>Meeting booked, thank you!</strong><br>
-                        We'll send you a Calendly invite so you can lock in a time that works best.
+                        <strong>You're all set to schedule!</strong><br>
+                        We're opening your personalized booking page now. If it doesn't appear, <a href="${bookingUrl}" target="_blank" rel="noopener">tap here to choose a time</a> that works best for you.
                     </div>
                 </div>
             `, true);
