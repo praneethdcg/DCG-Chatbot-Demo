@@ -2050,13 +2050,62 @@
                             <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                         </svg>
                         <div>
-                            <strong>🎉 Success! Consultation Scheduled</strong><br>
-                            Thank you for your interest, someone from our team will contact you in the next couple of hours.<br>
-                            <small>We look forward to speaking with you.</small>
+                            <strong>Thank you for providing your contact information!</strong><br>
+                            How would you prefer to connect with our specialist?
+                            <div class="dcg-inline-actions" style="margin-top: 12px;">
+                                <button class="dcg-inline-action" onclick="handleContactIn2Hours(event)">Contact me in 2 hours</button>
+                                <button class="dcg-inline-action" onclick="handleBookMeeting(event)">Book a meeting</button>
+                            </div>
                         </div>
                     </div>
                 `, true);
             }
+        }
+
+        function handleContactIn2Hours(event) {
+            if (event && event.currentTarget) {
+                const actionContainer = event.currentTarget.closest('.dcg-inline-actions');
+                if (actionContainer) {
+                    Array.from(actionContainer.querySelectorAll('button')).forEach((button) => {
+                        button.disabled = true;
+                    });
+                }
+            }
+
+            addMessage('bot', `
+                <div class="dcg-success-msg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <div>
+                        <strong>Got it!</strong><br>
+                        Someone from our team will reach out within the next two hours.
+                    </div>
+                </div>
+            `, true);
+        }
+
+        function handleBookMeeting(event) {
+            if (event && event.currentTarget) {
+                const actionContainer = event.currentTarget.closest('.dcg-inline-actions');
+                if (actionContainer) {
+                    Array.from(actionContainer.querySelectorAll('button')).forEach((button) => {
+                        button.disabled = true;
+                    });
+                }
+            }
+
+            addMessage('bot', `
+                <div class="dcg-success-msg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <div>
+                        <strong>Meeting booked, thank you!</strong><br>
+                        We'll send you a Calendly invite so you can lock in a time that works best.
+                    </div>
+                </div>
+            `, true);
         }
 
         // Microphone placeholder function
