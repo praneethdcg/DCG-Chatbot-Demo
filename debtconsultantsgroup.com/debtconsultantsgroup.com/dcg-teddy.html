@@ -2031,10 +2031,18 @@
                         </svg>
                         <div>
                             <strong>You're all set, ${firstName}!</strong><br>
-                            Thank you for your interest&mdash;someone from our team will contact you in the next couple of hours to review the savings with you.
+                            I'm opening the savings calculator for you now, and someone from our team will reach out within the next couple of hours.
                         </div>
                     </div>
                 `, true);
+
+                setTimeout(() => {
+                    try {
+                        navigateToSavingsWorkspace();
+                    } catch (error) {
+                        console.warn('Unable to open savings workspace automatically', error);
+                    }
+                }, 600);
             } else {
                 addMessage('bot', `
                     <div class="dcg-success-msg">
