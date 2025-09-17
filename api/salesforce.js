@@ -2,11 +2,23 @@ import jsforce from 'jsforce';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
-// Reuse existing rate limiting approach
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, '1 h'),
-});
+let ratelimit = null;
+
+try {
+  const hasUpstashConfig = Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+
+  if (hasUpstashConfig) {
+    ratelimit = new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.slidingWindow(10, '1 h'),
+    });
+  } else {
+    console.warn('Salesforce handler: Upstash credentials missing, disabling rate limiting.');
+  }
+} catch (error) {
+  console.warn('Salesforce handler: Unable to initialize Upstash rate limiting.', error);
+  ratelimit = null;
+}
 
 const allowedOrigins = [
   'https://debtconsultantsgroup.com',
@@ -143,13 +155,22 @@ export default async function handler(req, res) {
     ? ipHeader[0]
     : (ipHeader || req.connection?.remoteAddress || 'unknown');
   const ip = typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : 'unknown';
-  const { success, reset, remaining } = await ratelimit.limit(ip);
+  let rateLimitResult = { success: true };
 
-  if (!success) {
+  if (ratelimit) {
+    try {
+      rateLimitResult = await ratelimit.limit(ip);
+    } catch (error) {
+      console.warn('Salesforce handler: Rate limit check failed', error);
+      rateLimitResult = { success: true };
+    }
+  }
+
+  if (ratelimit && !rateLimitResult.success) {
     return res.status(429).json({
       success: false,
       error: 'Too many requests. Please try again later.',
-      retryAfter: reset
+      retryAfter: rateLimitResult.reset
     });
   }
 
@@ -221,7 +242,7 @@ export default async function handler(req, res) {
       success: true,
       leadId: leadResult.id,
       message: 'Lead created successfully',
-      rateLimitRemaining: remaining
+      rateLimitRemaining: rateLimitResult.remaining ?? null
     });
   } catch (error) {
     console.error('Salesforce Error:', error?.message || error);
