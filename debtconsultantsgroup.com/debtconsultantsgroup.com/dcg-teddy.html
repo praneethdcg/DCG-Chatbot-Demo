@@ -1621,11 +1621,53 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // Hide typing indicator
         function hideTyping() {
             isTyping = false;
             const indicator = document.getElementById('typingIndicator');
             if (indicator) indicator.remove();
+        }
+
+        function respondWithCalculatorFlow() {
+            if (!conversationContext.hasProvidedContact) {
+                conversationContext.awaitingCalculatorAccess = true;
+                persistConversation();
+
+                addMessage('bot', `
+                    <div>
+                        <p><strong>Let's unlock the savings workspace!</strong></p>
+                        <p style="margin-top: 8px;">Before I open the calculator, please share the best contact details so a specialist can follow up with your results.</p>
+                    </div>
+                `, true);
+
+                showContactForm();
+                return;
+            }
+
+            addMessage('bot', `
+                <div>
+                    <strong>📊 DCG Savings Workshop</strong><br><br>
+                    I'll open an interactive savings workspace so you can run numbers while we keep chatting on the side.<br><br>
+
+                    <ul style="margin-left: 20px;">
+                        <li>Model settlement ranges and weekly payments</li>
+                        <li>Compare industry benchmarks instantly</li>
+                        <li>Stay in the conversation for follow-up questions</li>
+                    </ul>
+
+                    <div class="dcg-inline-actions" style="margin-top: 12px;">
+                        <button class="dcg-inline-action" onclick="navigateToSavingsWorkspace()">
+                            🚀 Open savings workspace
+                        </button>
+                    </div>
+
+                    <p style="margin-top: 8px; font-size: 13px; color: #64748B;">If the page doesn't switch automatically, tap the button above.</p>
+                </div>
+            `, true);
+
+            if (!isOnSavingsWorkspace()) {
+                persistConversation({ shouldAutoOpen: true });
+                setTimeout(() => navigateToSavingsWorkspace(), 900);
+            }
         }
 
         // Process user message with enhanced intelligence
@@ -1730,46 +1772,7 @@
                         </div>
                     `, true);
                 } else if (lower.includes('calculator') || lower.includes('demo')) {
-                    if (!conversationContext.hasProvidedContact) {
-                        conversationContext.awaitingCalculatorAccess = true;
-                        persistConversation();
-
-                        addMessage('bot', `
-                            <div>
-                                <p><strong>Let's unlock the savings workspace!</strong></p>
-                                <p style="margin-top: 8px;">Before I open the calculator, please share the best contact details so a specialist can follow up with your results.</p>
-                            </div>
-                        `, true);
-
-                        showContactForm();
-                        return;
-                    }
-
-                    addMessage('bot', `
-                        <div>
-                            <strong>📊 DCG Savings Workshop</strong><br><br>
-                            I'll open an interactive savings workspace so you can run numbers while we keep chatting on the side.<br><br>
-
-                            <ul style="margin-left: 20px;">
-                                <li>Model settlement ranges and weekly payments</li>
-                                <li>Compare industry benchmarks instantly</li>
-                                <li>Stay in the conversation for follow-up questions</li>
-                            </ul>
-
-                            <div class="dcg-inline-actions" style="margin-top: 12px;">
-                                <button class="dcg-inline-action" onclick="navigateToSavingsWorkspace()">
-                                    🚀 Open savings workspace
-                                </button>
-                            </div>
-
-                            <p style="margin-top: 8px; font-size: 13px; color: #64748B;">If the page doesn't switch automatically, tap the button above.</p>
-                        </div>
-                    `, true);
-
-                    if (!isOnSavingsWorkspace()) {
-                        persistConversation({ shouldAutoOpen: true });
-                        setTimeout(() => navigateToSavingsWorkspace(), 900);
-                    }
+                    respondWithCalculatorFlow();
                 } else if ((lower === 'yes' || lower.includes('yes')) && conversationContext.hasAskedAboutQualification) {
                     addMessage('bot', `
                         <div>
@@ -1814,14 +1817,11 @@
                         </div>
                     `, true);
                     conversationContext.hasAskedAboutQualification = false;
-                } else if (lower.includes('save') || lower.includes('savings') || lower.includes('how much')) {
-                    addMessage('bot', `
-                        <div>
-                            <strong>Let's review your savings together.</strong><br><br>
-                            Our specialists will build a personalized plan and walk you through the numbers one-on-one.
-                            <p style="margin-top: 12px;">Just let me know when you're ready, and I'll line up the introduction.</p>
-                        </div>
-                    `, true);
+                } else if (
+                    (lower.includes('save') || lower.includes('savings') || lower.includes('how much')) &&
+                    !lower.includes('specialist about these savings')
+                ) {
+                    respondWithCalculatorFlow();
                 } else if (lower.includes('mca') || lower.includes('merchant cash') || lower.includes('advance')) {
                     addMessage('bot', `
                         <div>

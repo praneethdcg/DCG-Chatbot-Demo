@@ -61,41 +61,12 @@
             color: #134E4A;
         }
 
-        .dcg-contact-card {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
+        .dcg-contact-note {
+            padding: 18px;
+            border-radius: 16px;
             background: rgba(20, 184, 166, 0.12);
-            border: 1px solid rgba(19, 78, 74, 0.16);
-            border-radius: 18px;
-            padding: 20px;
-        }
-
-        .dcg-contact-chip {
-            padding: 12px 18px;
-            border-radius: 14px;
-            background: white;
-            min-width: 180px;
+            border: 1px solid rgba(20, 184, 166, 0.28);
             color: #0B3C3E;
-            font-weight: 600;
-            display: grid;
-            gap: 4px;
-            box-shadow: 0 10px 24px rgba(20, 184, 166, 0.16);
-        }
-
-        .dcg-contact-chip span {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #475569;
-        }
-
-        .dcg-contact-missing {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.32);
-            border-radius: 18px;
-            padding: 20px;
-            color: #B91C1C;
             font-weight: 500;
         }
 
@@ -812,38 +783,11 @@
             }
         })();
 
-        if (contactPayload && (contactPayload.name || contactPayload.phone || contactPayload.email)) {
-            const name = contactPayload.name || 'Prospect';
-            const phone = formatReadablePhone(contactPayload.phone || '');
-            const email = contactPayload.email || '—';
-
-            contactContainer.innerHTML = `
-                <div class="dcg-contact-card">
-                    <div class="dcg-contact-chip">
-                        <span>Name</span>
-                        ${name}
-                    </div>
-                    <div class="dcg-contact-chip">
-                        <span>Phone</span>
-                        ${phone || '—'}
-                    </div>
-                    <div class="dcg-contact-chip">
-                        <span>Email</span>
-                        ${email}
-                    </div>
-                    <div class="dcg-contact-chip">
-                        <span>Captured</span>
-                        ${new Date(contactPayload.timestamp || Date.now()).toLocaleString()}
-                    </div>
-                </div>
-            `;
-        } else {
-            contactContainer.innerHTML = `
-                <div class="dcg-contact-missing">
-                    We don’t have contact info for this session. Jump back to the assistant, share your name, email, and phone, then return to unlock the calculator.
-                </div>
-            `;
-        }
+        contactContainer.innerHTML = `
+            <div class="dcg-contact-note">
+                You're all set to model savings. Adjust the debt details below and run the estimate whenever you're ready.
+            </div>
+        `;
 
         function formatReadablePhone(phone) {
             const digits = (phone || '').replace(/\D/g, '');
