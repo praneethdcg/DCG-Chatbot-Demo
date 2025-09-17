@@ -70,6 +70,42 @@
             font-weight: 500;
         }
 
+        .dcg-contact-summary {
+            display: grid;
+            gap: 12px 24px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            margin-bottom: 12px;
+        }
+
+        .dcg-contact-summary-item {
+            display: grid;
+            gap: 4px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(20, 184, 166, 0.18);
+        }
+
+        .dcg-contact-summary-label {
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #0F766E;
+            font-weight: 600;
+        }
+
+        .dcg-contact-summary-value {
+            font-size: 15px;
+            color: #0B3C3E;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .dcg-contact-note-message {
+            font-size: 14px;
+            color: #0B3C3E;
+        }
+
         .dcg-lender-builder {
             display: grid;
             gap: 22px;
@@ -787,11 +823,26 @@
             }
         })();
 
-        contactContainer.innerHTML = `
+        const defaultContactCopy = `
             <div class="dcg-contact-note">
-                You're all set to model savings. Adjust the debt details below and run the estimate whenever you're ready.
+                <div class="dcg-contact-note-message">You're all set to model savings. Adjust the debt details below and run the estimate whenever you're ready.</div>
             </div>
         `;
+
+        contactContainer.innerHTML = defaultContactCopy;
+
+        function escapeHTML(value = '') {
+            return (value || '').replace(/[&<>"']/g, (char) => {
+                const entities = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                };
+                return entities[char] || char;
+            });
+        }
 
         function formatReadablePhone(phone) {
             const digits = (phone || '').replace(/\D/g, '');
@@ -799,6 +850,40 @@
                 return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
             }
             return phone || '';
+        }
+
+        if (contactPayload) {
+            const { name, businessName, phone, email } = contactPayload;
+
+            const summaryItems = [];
+            if (businessName) {
+                summaryItems.push({ label: 'Business', value: escapeHTML(businessName) });
+            }
+            if (name) {
+                summaryItems.push({ label: 'Contact', value: escapeHTML(name) });
+            }
+
+            const phoneDisplay = formatReadablePhone(phone);
+            if (phoneDisplay) {
+                summaryItems.push({ label: 'Phone', value: escapeHTML(phoneDisplay) });
+            }
+            if (email) {
+                summaryItems.push({ label: 'Email', value: escapeHTML(email) });
+            }
+
+            const summaryHtml = summaryItems.map(({ label, value }) => `
+                <div class="dcg-contact-summary-item">
+                    <span class="dcg-contact-summary-label">${label}</span>
+                    <span class="dcg-contact-summary-value">${value}</span>
+                </div>
+            `).join('');
+
+            contactContainer.innerHTML = `
+                <div class="dcg-contact-note">
+                    ${summaryHtml ? `<div class="dcg-contact-summary">${summaryHtml}</div>` : ''}
+                    <div class="dcg-contact-note-message">You're all set to model savings. Adjust the debt details below and run the estimate whenever you're ready.</div>
+                </div>
+            `;
         }
 
         function createLenderRow(initial = {}) {

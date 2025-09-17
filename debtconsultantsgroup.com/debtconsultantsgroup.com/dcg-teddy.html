@@ -509,6 +509,57 @@
             box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
         }
 
+        .dcg-inline-actions.dcg-followup-actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        @media (min-width: 640px) {
+            .dcg-inline-actions.dcg-followup-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .dcg-inline-action.dcg-followup-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            justify-content: flex-start;
+            padding: 14px 18px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #0F766E, #0B3C3E);
+            box-shadow: 0 14px 30px rgba(15, 118, 110, 0.35);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .dcg-followup-icon {
+            font-size: 20px;
+        }
+
+        .dcg-followup-content {
+            display: grid;
+            gap: 4px;
+            text-align: left;
+        }
+
+        .dcg-followup-content strong {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .dcg-followup-sub {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
+        .dcg-followup-chevron {
+            margin-left: auto;
+            font-size: 18px;
+            opacity: 0.7;
+        }
+
         .dcg-header-actions {
             display: flex;
             gap: 8px;
@@ -732,6 +783,13 @@
             display: grid;
             gap: 10px;
             margin-bottom: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        @media (max-width: 520px) {
+            .dcg-form-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .dcg-form-field {
@@ -1639,7 +1697,7 @@
                     </div>
                 `, true);
 
-                showContactForm();
+                showContactForm({ preserveCalculatorIntent: true });
                 return;
             }
 
@@ -1964,7 +2022,13 @@
         }
 
         // Show contact form
-        function showContactForm() {
+        function showContactForm(options = {}) {
+            const { preserveCalculatorIntent = false } = options;
+
+            if (!preserveCalculatorIntent) {
+                conversationContext.awaitingCalculatorAccess = false;
+            }
+
             const formId = 'contactForm_' + Date.now();
             addMessage('bot', `
                 <div class="dcg-contact-form">
@@ -1972,6 +2036,7 @@
                     <form onsubmit="submitContactForm(event, '${formId}')">
                         <div class="dcg-form-grid">
                             <input type="text" class="dcg-form-field" placeholder="Full Name" required id="${formId}_name" maxlength="100">
+                            <input type="text" class="dcg-form-field" placeholder="Business Name" required id="${formId}_business" maxlength="120">
                             <input type="tel" class="dcg-form-field" placeholder="Phone Number" required id="${formId}_phone" maxlength="20">
                             <input type="email" class="dcg-form-field" placeholder="Email Address" required id="${formId}_email" maxlength="100">
                         </div>
@@ -1986,6 +2051,7 @@
             event.preventDefault();
 
             const name = document.getElementById(formId + '_name').value.trim();
+            const businessName = document.getElementById(formId + '_business').value.trim();
             const phone = document.getElementById(formId + '_phone').value.trim();
             const email = document.getElementById(formId + '_email').value.trim();
 
@@ -1995,6 +2061,11 @@
 
             if (!name || name.length < 2) {
                 alert('Please enter a valid name');
+                return;
+            }
+
+            if (!businessName || businessName.length < 2) {
+                alert('Please enter a valid business name');
                 return;
             }
 
@@ -2016,11 +2087,11 @@
 
             conversationContext.hasProvidedContact = true;
             conversationContext.awaitingCalculatorAccess = false;
-            conversationContext.contactDetails = { name, phone, email };
+            conversationContext.contactDetails = { name, businessName, phone, email };
             persistConversation();
 
             try {
-                const contactPayload = { name, phone, email, timestamp: Date.now() };
+                const contactPayload = { name, businessName, phone, email, timestamp: Date.now() };
                 sessionStorage.setItem('dcgCalculatorContact', JSON.stringify(contactPayload));
             } catch (error) {
                 console.warn('Unable to persist calculator contact', error);
@@ -2055,9 +2126,23 @@
                         <div>
                             <strong>Thank you for providing your contact information!</strong><br>
                             How would you prefer to connect with our specialist?
-                            <div class="dcg-inline-actions" style="margin-top: 12px;">
-                                <button class="dcg-inline-action" onclick="handleContactIn2Hours(event)">Contact me in 2 hours</button>
-                                <button class="dcg-inline-action" onclick="handleBookMeeting(event)">Book a meeting</button>
+                            <div class="dcg-inline-actions dcg-followup-actions">
+                                <button class="dcg-inline-action dcg-followup-btn" onclick="handleContactIn2Hours(event)">
+                                    <span class="dcg-followup-icon">⏱️</span>
+                                    <span class="dcg-followup-content">
+                                        <strong>Contact me in 2 hours</strong>
+                                        <span class="dcg-followup-sub">We'll prioritize a callback in the next two hours.</span>
+                                    </span>
+                                    <span class="dcg-followup-chevron">›</span>
+                                </button>
+                                <button class="dcg-inline-action dcg-followup-btn" onclick="handleBookMeeting(event)">
+                                    <span class="dcg-followup-icon">📅</span>
+                                    <span class="dcg-followup-content">
+                                        <strong>Book a meeting</strong>
+                                        <span class="dcg-followup-sub">Pick a time that works best for your schedule.</span>
+                                    </span>
+                                    <span class="dcg-followup-chevron">›</span>
+                                </button>
                             </div>
                         </div>
                     </div>
