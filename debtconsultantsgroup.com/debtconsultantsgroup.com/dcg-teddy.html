@@ -73,19 +73,19 @@
             height: 56px;
             border-radius: 50%;
             border: none;
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             color: white;
             font-size: 24px;
             display: none;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 16px 32px rgba(15,108,114,0.28);
+            box-shadow: 0 16px 32px rgba(20, 184, 166, 0.28);
             z-index: 10001;
             cursor: pointer;
         }
 
         .dcg-mobile-chat-toggle.dcg-open {
-            background: linear-gradient(135deg, #0B3C3E, #062325);
+            background: linear-gradient(135deg, #134E4A, #042F2E);
         }
 
         .dcg-mobile-quick-sheet {
@@ -94,10 +94,10 @@
             right: 0;
             bottom: -100%;
             padding: 24px 20px 32px;
-            background: rgba(255,255,255,0.96);
+            background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(18px);
             border-radius: 24px 24px 0 0;
-            box-shadow: 0 -24px 60px rgba(15,108,114,0.24);
+            box-shadow: 0 -24px 60px rgba(20, 184, 166, 0.24);
             z-index: 10000;
             transition: transform 0.3s ease, bottom 0.3s ease;
             transform: translateY(100%);
@@ -126,7 +126,7 @@
         .dcg-mobile-quick-sheet__body p {
             margin: 0;
             font-size: 14px;
-            color: #4F6F71;
+            color: #475569;
         }
 
         .dcg-mobile-quick-sheet__grid {
@@ -138,13 +138,13 @@
         .dcg-mobile-quick-sheet__grid button {
             padding: 14px;
             border-radius: 16px;
-            border: 1px solid rgba(12, 74, 78, 0.2);
+            border: 1px solid rgba(19, 78, 74, 0.2);
             background: white;
             color: #0B3C3E;
             font-weight: 600;
             font-size: 15px;
             cursor: pointer;
-            box-shadow: 0 10px 20px rgba(15,108,114,0.12);
+            box-shadow: 0 10px 20px rgba(20, 184, 166, 0.16);
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
@@ -153,7 +153,7 @@
         }
 
         .dcg-mobile-quick-sheet__grid button:hover {
-            border-color: #0F6C72;
+            border-color: #14B8A6;
         }
 
         .dcg-mobile-quick-sheet__close {
@@ -161,7 +161,7 @@
             padding: 12px;
             border: none;
             background: transparent;
-            color: #0F6C72;
+            color: #14B8A6;
             font-weight: 600;
             cursor: pointer;
         }
@@ -173,7 +173,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(11, 60, 62, 0.4);
+            background: rgba(4, 47, 46, 0.5);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             z-index: 9998;
@@ -209,11 +209,11 @@
         .dcg-bar-container {
             max-width: 1000px;
             margin: 0 auto;
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 20px 20px 0 0;
-            box-shadow: 0 -8px 32px rgba(15, 108, 114, 0.25);
+            box-shadow: 0 -8px 32px rgba(20, 184, 166, 0.24);
             padding: 20px;
             transition: all 0.3s ease;
             position: relative;
@@ -271,7 +271,7 @@
         }
 
         .dcg-bottom-input::placeholder {
-            color: #6C757D;
+            color: #64748B;
             font-weight: 400;
         }
 
@@ -279,7 +279,7 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             border: none;
             color: white;
             cursor: pointer;
@@ -287,14 +287,14 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(15, 108, 114, 0.3);
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.32);
         }
 
         .dcg-mic-button {
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             border: none;
             color: white;
             cursor: pointer;
@@ -303,36 +303,36 @@
             justify-content: center;
             transition: all 0.2s ease;
             margin-right: 8px;
-            box-shadow: 0 2px 8px rgba(15, 108, 114, 0.3);
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.32);
         }
 
         .dcg-mic-button:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(15, 108, 114, 0.4);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
         }
 
         .dcg-mic-button.listening {
             animation: micPulse 1.5s infinite;
-            background: #DC2626;
-            border-color: #DC2626;
+            background: #EF4444;
+            border-color: #EF4444;
             color: white;
         }
 
         @keyframes micPulse {
             0% {
-                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
             }
             70% {
-                box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
             }
             100% {
-                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
             }
         }
 
         .dcg-bottom-send:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(15, 108, 114, 0.4);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
         }
 
         /* DCG Bot Avatar for bottom bar */
@@ -416,7 +416,7 @@
             max-width: 800px;
             height: 70vh;
             max-height: 600px;
-            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            background: linear-gradient(135deg, #FFFFFF 0%, #F0FDFA 100%);
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             z-index: 10000;
@@ -436,7 +436,7 @@
 
         /* Modal Header */
         .dcg-modal-header {
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             padding: 20px 24px;
             display: flex;
             align-items: center;
@@ -494,7 +494,7 @@
 
         .dcg-inline-action {
             padding: 8px 14px;
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             color: white;
             border: none;
             border-radius: 20px;
@@ -506,7 +506,7 @@
 
         .dcg-inline-action:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(15, 108, 114, 0.3);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
         }
 
         .dcg-header-actions {
@@ -537,7 +537,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 24px;
-            background: linear-gradient(180deg, #F8F9FA 0%, #E9ECEF 100%);
+            background: linear-gradient(180deg, #F0FDFA 0%, #CCFBF1 100%);
         }
 
         .dcg-message {
@@ -584,8 +584,8 @@
 
         .dcg-message.bot .dcg-msg-avatar {
             background: white;
-            border: 2px solid rgba(15, 108, 114, 0.2);
-            box-shadow: 0 2px 8px rgba(15, 108, 114, 0.1);
+            border: 2px solid rgba(20, 184, 166, 0.2);
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.14);
         }
 
         .dcg-message.bot .dcg-msg-avatar img {
@@ -596,8 +596,8 @@
         }
 
         .dcg-message.user .dcg-msg-avatar {
-            background: linear-gradient(135deg, #6366F1, #8B5CF6);
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+            background: linear-gradient(135deg, #06B6D4, #14B8A6);
+            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.32);
         }
 
         .dcg-msg-bubble {
@@ -611,11 +611,11 @@
         .dcg-message.bot .dcg-msg-bubble {
             background: white;
             color: #0B3C3E;
-            border: 1px solid rgba(15, 108, 114, 0.1);
+            border: 1px solid rgba(20, 184, 166, 0.18);
         }
 
         .dcg-message.user .dcg-msg-bubble {
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             color: white;
         }
 
@@ -634,7 +634,7 @@
         .dcg-typing-dot {
             width: 8px;
             height: 8px;
-            background: #0F6C72;
+            background: #14B8A6;
             border-radius: 50%;
             animation: typingAnim 1.4s infinite;
         }
@@ -664,7 +664,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: #F8F9FA;
+            background: #F0FDFA;
             border-radius: 28px;
             padding: 8px 8px 8px 20px;
             border: 2px solid transparent;
@@ -672,9 +672,9 @@
         }
 
         .dcg-input-wrapper:focus-within {
-            border-color: #0F6C72;
+            border-color: #14B8A6;
             background: white;
-            box-shadow: 0 0 0 4px rgba(15, 108, 114, 0.1);
+            box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.16);
         }
 
         .dcg-chat-input {
@@ -687,14 +687,14 @@
         }
 
         .dcg-chat-input::placeholder {
-            color: #6C757D;
+            color: #64748B;
         }
 
         .dcg-send-button {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             border: none;
             color: white;
             cursor: pointer;
@@ -706,7 +706,7 @@
 
         .dcg-send-button:hover:not(:disabled) {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(15, 108, 114, 0.3);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.35);
         }
 
         .dcg-send-button:disabled {
@@ -716,7 +716,7 @@
 
         /* Contact Form */
         .dcg-contact-form {
-            background: rgba(15, 108, 114, 0.05);
+            background: rgba(20, 184, 166, 0.08);
             border-radius: 12px;
             padding: 16px;
             margin-top: 12px;
@@ -736,7 +736,7 @@
 
         .dcg-form-field {
             padding: 10px 14px;
-            border: 1px solid rgba(15, 108, 114, 0.2);
+            border: 1px solid rgba(20, 184, 166, 0.24);
             border-radius: 8px;
             background: white;
             font-size: 14px;
@@ -745,13 +745,13 @@
         }
 
         .dcg-form-field:focus {
-            border-color: #0F6C72;
-            box-shadow: 0 0 0 3px rgba(15, 108, 114, 0.1);
+            border-color: #14B8A6;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.16);
         }
 
         .dcg-form-submit {
             padding: 10px 20px;
-            background: linear-gradient(135deg, #0F6C72, #0B3C3E);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             color: white;
             border: none;
             border-radius: 8px;
@@ -763,12 +763,12 @@
 
         .dcg-form-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(15, 108, 114, 0.3);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.32);
         }
 
         /* Success Message */
         .dcg-success-msg {
-            background: linear-gradient(135deg, #10B981, #059669);
+            background: linear-gradient(135deg, #10B981, #14B8A6);
             color: white;
             padding: 16px;
             border-radius: 12px;
@@ -780,7 +780,7 @@
         /* Restart Button */
         .dcg-restart-hint {
             font-size: 12px;
-            color: #6C757D;
+            color: #475569;
             margin-top: 8px;
             font-style: italic;
         }
@@ -791,7 +791,7 @@
                 box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
             }
             50% {
-                box-shadow: 0 3px 20px rgba(15, 108, 114, 0.4);
+                box-shadow: 0 3px 20px rgba(20, 184, 166, 0.35);
             }
             100% {
                 box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
@@ -874,17 +874,17 @@
         }
 
         .dcg-messages-container::-webkit-scrollbar-track {
-            background: rgba(15, 108, 114, 0.05);
+            background: rgba(20, 184, 166, 0.12);
             border-radius: 4px;
         }
 
         .dcg-messages-container::-webkit-scrollbar-thumb {
-            background: rgba(15, 108, 114, 0.3);
+            background: rgba(20, 184, 166, 0.35);
             border-radius: 4px;
         }
 
         .dcg-messages-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(15, 108, 114, 0.5);
+            background: rgba(20, 184, 166, 0.5);
         }
 
         /* Animation for minimize */
@@ -1673,7 +1673,7 @@
                     addMessage('bot', `
                         <div>
                             <p>Smart move exploring your options! Here's what makes DCG different:</p>
-                            <div style="background: rgba(15, 108, 114, 0.05); padding: 12px; border-radius: 8px; margin: 12px 0;">
+                            <div style="background: rgba(20, 184, 166, 0.12); padding: 12px; border-radius: 8px; margin: 12px 0;">
                                 <strong>✅ No Bankruptcy</strong> - Protect your credit<br>
                                 <strong>✅ No New Loans</strong> - Don't add more debt<br>
                                 <strong>✅ Performance-Based</strong> - We only succeed when you save<br>
@@ -1715,7 +1715,7 @@
                             • <strong>Unsecured debt</strong> (credit cards, MCAs, loans)<br>
                             • <strong>Financial hardship</strong> affecting payments<br><br>
 
-                            <div style="background: rgba(15, 108, 114, 0.1); padding: 12px; border-radius: 8px;">
+                            <div style="background: rgba(20, 184, 166, 0.18); padding: 12px; border-radius: 8px;">
                                 <strong>Quick Check:</strong> Do you have $25,000+ in business debt?
                             </div>
 
@@ -1762,7 +1762,7 @@
                                 </button>
                             </div>
 
-                            <p style="margin-top: 8px; font-size: 13px; color: #6C757D;">If the page doesn't switch automatically, tap the button above.</p>
+                            <p style="margin-top: 8px; font-size: 13px; color: #64748B;">If the page doesn't switch automatically, tap the button above.</p>
                         </div>
                     `, true);
 
@@ -1819,7 +1819,7 @@
                         <div>
                             <strong>💰 Your Potential Savings:</strong><br><br>
 
-                            <div style="background: linear-gradient(135deg, rgba(15, 108, 114, 0.1), rgba(11, 60, 62, 0.05)); padding: 16px; border-radius: 8px; margin: 12px 0;">
+                            <div style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.18), rgba(4, 47, 46, 0.08)); padding: 16px; border-radius: 8px; margin: 12px 0;">
                                 <strong>DCG clients typically save:</strong><br>
                                 • <strong>40-60%</strong> of total debt<br>
                                 • <strong>30-50%</strong> lower monthly payments<br>
@@ -1856,7 +1856,7 @@
                             • <strong>PROTECT</strong> from UCC liens & judgments<br>
                             • <strong>SETTLE</strong> for pennies on the dollar<br><br>
 
-                            <div style="background: #FEE2E2; border-left: 4px solid #DC2626; padding: 12px;">
+                            <div style="background: #FFE4E6; border-left: 4px solid #EF4444; padding: 12px;">
                                 <strong>⚠️ ACT FAST:</strong> MCAs can freeze accounts without warning. Protection starts within 24 hours of enrollment.
                             </div>
 
@@ -1872,7 +1872,7 @@
                         <div>
                             <strong>💳 Transparent Pricing:</strong><br><br>
 
-                            <div style="background: rgba(15, 108, 114, 0.05); padding: 12px; border-radius: 8px;">
+                            <div style="background: rgba(20, 184, 166, 0.12); padding: 12px; border-radius: 8px;">
                                 <strong>Our Fee Structure:</strong><br>
                                 • <strong>$0 upfront</strong> - Start for free<br>
                                 • <strong>Performance-based</strong> - We earn as you save<br>
