@@ -916,7 +916,7 @@
                         type="text"
                         class="dcg-bottom-input"
                         id="bottomInput"
-                        placeholder="👋 Hi, welcome to DCG! Ask about savings demos, qualifying, or connect with a specialist."
+                        placeholder="👋 Hi, welcome to DCG! Ask about the savings calculator, qualifying, or connect with a specialist."
                         onkeypress="handleBottomInput(event)"
                     />
                     <button class="dcg-mic-button" onclick="toggleMicrophone(event, 'bottom')" type="button" title="Voice input (coming soon)">
@@ -956,7 +956,7 @@
             <h2>Need help?</h2>
             <p>Pick a topic or open the chat window.</p>
             <div class="dcg-mobile-quick-sheet__grid">
-                <button data-mobile-action="calculator">Savings calculator demo</button>
+                <button data-mobile-action="calculator">Savings calculator</button>
                 <button data-mobile-action="qualify">Do I qualify?</button>
                 <button data-mobile-action="sales">Talk to a specialist</button>
                 <button data-mobile-action="help">How DCG helps</button>
@@ -1005,7 +1005,7 @@
                     type="text"
                     class="dcg-chat-input"
                     id="chatInput"
-                    placeholder="Ask about savings demos, qualification, or connect with a specialist."
+                    placeholder="Ask about the savings calculator, qualification, or connect with a specialist."
                     autocomplete="off"
                 />
                 <button class="dcg-mic-button" onclick="toggleMicrophone(event, 'modal')" type="button" title="Voice input (coming soon)">
@@ -1239,7 +1239,7 @@
                         message = 'Do I qualify for the DCG debt relief program?';
                         break;
                     case 'calculator':
-                        message = 'Show me the savings calculator demo';
+                        message = 'Show me the savings calculator';
                         break;
                     case 'sales':
                         message = 'I would like to speak with a sales representative';
@@ -1284,10 +1284,10 @@
                 setTimeout(() => {
                     addMessage('bot', `
                         <div>
-                            <p style="margin-bottom: 12px;">👋 ${greeting}! Welcome to DCG. Ask me about savings calculator demos, qualification steps, or connect with a specialist.</p>
+                            <p style="margin-bottom: 12px;">👋 ${greeting}! Welcome to DCG. Ask me about the savings calculator, qualification steps, or connect with a specialist.</p>
                             <div class="dcg-inline-actions">
                                 <button class="dcg-inline-action" onclick="handleInlineAction('calculator')">
-                                    📊 Savings demo
+                                    📊 Savings calculator
                                 </button>
                                 <button class="dcg-inline-action" onclick="handleInlineAction('qualify')">
                                     ✅ Do I qualify?
@@ -1524,7 +1524,7 @@
                     message = 'No';
                     break;
                 case 'calculator':
-                    message = 'Show me the calculator';
+                    message = 'Show me the savings calculator';
                     break;
             }
 
@@ -1634,7 +1634,7 @@
 
                 addMessage('bot', `
                     <div>
-                        <p><strong>Let's unlock the savings workspace!</strong></p>
+                        <p><strong>Let's unlock the savings calculator!</strong></p>
                         <p style="margin-top: 8px;">Before I open the calculator, please share the best contact details so a specialist can follow up with your results.</p>
                     </div>
                 `, true);
@@ -1645,18 +1645,18 @@
 
             addMessage('bot', `
                 <div>
-                    <strong>📊 DCG Savings Workshop</strong><br><br>
-                    I'll open an interactive savings workspace so you can run numbers while we keep chatting on the side.<br><br>
+                    <strong>📊 DCG Projected Savings Calculator</strong><br><br>
+                    I'll open our internal calculator so you can model scenarios while we keep chatting on the side.<br><br>
 
                     <ul style="margin-left: 20px;">
                         <li>Model settlement ranges and weekly payments</li>
                         <li>Compare industry benchmarks instantly</li>
-                        <li>Stay in the conversation for follow-up questions</li>
+                        <li>Keep the conversation open for quick follow-ups</li>
                     </ul>
 
                     <div class="dcg-inline-actions" style="margin-top: 12px;">
                         <button class="dcg-inline-action" onclick="navigateToSavingsWorkspace()">
-                            🚀 Open savings workspace
+                            🚀 Open Savings Calculator
                         </button>
                     </div>
 
@@ -1840,6 +1840,9 @@
                             </div>
 
                             <div class="dcg-inline-actions" style="margin-top: 12px;">
+                                <button class="dcg-inline-action" onclick="handleInlineAction('calculator')">
+                                    📊 Calculate your MCA savings
+                                </button>
                                 <button class="dcg-inline-action" onclick="handleInlineAction('sales')">
                                     🆘 Get Emergency Help
                                 </button>
@@ -2040,7 +2043,7 @@
                     try {
                         navigateToSavingsWorkspace();
                     } catch (error) {
-                        console.warn('Unable to open savings workspace automatically', error);
+                        console.warn('Unable to open savings calculator automatically', error);
                     }
                 }, 600);
             } else {

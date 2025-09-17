@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DCG Savings Workshop</title>
+    <title>DCG Projected Savings Calculator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -629,7 +629,7 @@
             <h2>Quick help</h2>
             <p>Pick a topic or type your own question.</p>
             <div class="dcg-quick-actions-sheet__grid">
-                <button data-action="calculator">Savings calculator demo</button>
+                <button data-action="calculator">Refresh Calculator</button>
                 <button data-action="qualify">Do I qualify?</button>
                 <button data-action="sales">Talk to a specialist</button>
                 <button data-action="help">How DCG helps</button>
@@ -747,6 +747,10 @@
             button.addEventListener('click', () => {
                 const action = button.getAttribute('data-action');
                 if (!action) return;
+                if (action === 'calculator') {
+                    window.location.href = 'dcg-savings-workshop.html';
+                    return;
+                }
                 showMobileChat();
                 sendQuickAction(action);
                 if (isCompact && quickSheet) {
