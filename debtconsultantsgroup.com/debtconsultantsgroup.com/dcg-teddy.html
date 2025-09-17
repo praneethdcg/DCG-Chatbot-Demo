@@ -2098,6 +2098,10 @@
                 return;
             }
 
+            const submitLabel = conversationContext.awaitingCalculatorAccess
+                ? 'Open the Calculator'
+                : 'Get My Free Consultation';
+
             const formId = 'contactForm_' + Date.now();
             addMessage('bot', `
                 <div class="dcg-contact-form">
@@ -2109,7 +2113,7 @@
                             <input type="tel" class="dcg-form-field" placeholder="Phone Number" required id="${formId}_phone" maxlength="20">
                             <input type="email" class="dcg-form-field" placeholder="Email Address" required id="${formId}_email" maxlength="100">
                         </div>
-                        <button type="submit" class="dcg-form-submit">Get My Free Consultation</button>
+                        <button type="submit" class="dcg-form-submit">${submitLabel}</button>
                     </form>
                 </div>
             `, true);
