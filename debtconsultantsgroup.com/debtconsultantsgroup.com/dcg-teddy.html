@@ -1103,6 +1103,8 @@
         const SAVINGS_PAGE = 'dcg-savings-workshop.html';
         const urlParams = new URLSearchParams(window.location.search);
         const isSidebarMode = urlParams.get('mode') === 'sidebar';
+        const chatParam = (urlParams.get('chat') || '').toLowerCase();
+        const shouldAutoOpenFromUrl = ['1', 'true', 'yes', 'open'].includes(chatParam);
         const mobileMedia = window.matchMedia('(max-width: 768px)');
         let isMobileView = mobileMedia.matches;
         const bottomBarEl = document.getElementById('dcg-bottom-bar');
@@ -2434,6 +2436,14 @@
         }
 
         restoreConversation();
+
+        if (!isSidebarMode && shouldAutoOpenFromUrl) {
+            setTimeout(() => {
+                if (!isModalOpen) {
+                    openChat();
+                }
+            }, 300);
+        }
     </script>
 </body>
 </html>
