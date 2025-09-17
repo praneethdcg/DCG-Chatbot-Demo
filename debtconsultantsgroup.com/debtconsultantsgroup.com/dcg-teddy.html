@@ -2111,17 +2111,6 @@
             }
         }
 
-        const bottomInputEl = document.getElementById('bottomInput');
-        if (bottomInputEl && !isSidebarMode) {
-            const bringChatForward = () => {
-                if (!isModalOpen) {
-                    openChat();
-                }
-            };
-            bottomInputEl.addEventListener('focus', bringChatForward);
-            bottomInputEl.addEventListener('click', bringChatForward);
-        }
-
         restoreConversation();
     </script>
 </body>
