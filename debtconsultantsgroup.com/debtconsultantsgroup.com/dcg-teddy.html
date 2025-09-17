@@ -2038,6 +2038,11 @@
                 conversationContext.awaitingCalculatorAccess = false;
             }
 
+            if (conversationContext.hasProvidedContact) {
+                showFollowUpOptions();
+                return;
+            }
+
             const formId = 'contactForm_' + Date.now();
             addMessage('bot', `
                 <div class="dcg-contact-form">
@@ -2051,6 +2056,38 @@
                         </div>
                         <button type="submit" class="dcg-form-submit">Get My Free Consultation</button>
                     </form>
+                </div>
+            `, true);
+        }
+
+        function showFollowUpOptions() {
+            addMessage('bot', `
+                <div class="dcg-success-msg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <div>
+                        <strong>Thank you for providing your contact information!</strong><br>
+                        How would you prefer to connect with our specialist?
+                        <div class="dcg-inline-actions dcg-followup-actions">
+                            <button class="dcg-inline-action dcg-followup-btn" onclick="handleContactIn2Hours(event)">
+                                <span class="dcg-followup-icon">⏱️</span>
+                                <span class="dcg-followup-content">
+                                    <strong>Contact me in 2 hours</strong>
+                                    <span class="dcg-followup-sub">We'll prioritize a callback in the next two hours.</span>
+                                </span>
+                                <span class="dcg-followup-chevron">›</span>
+                            </button>
+                            <button class="dcg-inline-action dcg-followup-btn" onclick="handleBookMeeting(event)">
+                                <span class="dcg-followup-icon">📅</span>
+                                <span class="dcg-followup-content">
+                                    <strong>Book a meeting</strong>
+                                    <span class="dcg-followup-sub">Pick a time that works best for your schedule.</span>
+                                </span>
+                                <span class="dcg-followup-chevron">›</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `, true);
         }
@@ -2321,35 +2358,7 @@
                     }
                 }, 600);
             } else {
-                addMessage('bot', `
-                    <div class="dcg-success-msg">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                        </svg>
-                        <div>
-                            <strong>Thank you for providing your contact information!</strong><br>
-                            How would you prefer to connect with our specialist?
-                            <div class="dcg-inline-actions dcg-followup-actions">
-                                <button class="dcg-inline-action dcg-followup-btn" onclick="handleContactIn2Hours(event)">
-                                    <span class="dcg-followup-icon">⏱️</span>
-                                    <span class="dcg-followup-content">
-                                        <strong>Contact me in 2 hours</strong>
-                                        <span class="dcg-followup-sub">We'll prioritize a callback in the next two hours.</span>
-                                    </span>
-                                    <span class="dcg-followup-chevron">›</span>
-                                </button>
-                                <button class="dcg-inline-action dcg-followup-btn" onclick="handleBookMeeting(event)">
-                                    <span class="dcg-followup-icon">📅</span>
-                                    <span class="dcg-followup-content">
-                                        <strong>Book a meeting</strong>
-                                        <span class="dcg-followup-sub">Pick a time that works best for your schedule.</span>
-                                    </span>
-                                    <span class="dcg-followup-chevron">›</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `, true);
+                showFollowUpOptions();
             }
         }
 
@@ -2386,58 +2395,10 @@
                 }
             }
 
-            const leadId = conversationContext?.contactDetails?.leadId;
-
-            if (!leadId) {
-                console.warn('handleBookMeeting: Missing lead ID for personalized booking link.', conversationContext?.contactDetails);
-
-                addMessage('bot', `
-                    <div>
-                        <strong>Let's finish setting up your meeting.</strong><br>
-                        I couldn't locate your personalized scheduling link just yet. Reply here and we'll connect you with a specialist right away, or visit our contact page to reach us directly.
-                    </div>
-                `, true);
-
-                return;
-            }
-
-            const bookingUrl = `https://book.debtconsultantsgroup.com/?utm_source=salesforce&utm_medium=sms&utm_campaign=us&id1=${encodeURIComponent(leadId)}`;
-
-            console.log('handleBookMeeting: Opening booking URL for lead', leadId);
-
-            let redirectBlocked = false;
-
-            try {
-                const openedWindow = window.open(bookingUrl, '_blank', 'noopener');
-                if (!openedWindow) {
-                    redirectBlocked = true;
-                    console.warn('handleBookMeeting: Browser blocked the booking tab.');
-                }
-            } catch (error) {
-                redirectBlocked = true;
-                console.error('handleBookMeeting: Failed to open personalized booking URL.', error);
-            }
-
-            if (redirectBlocked) {
-                addMessage('bot', `
-                    <div>
-                        <strong>Your scheduling link is ready.</strong><br>
-                        Please <a href="${bookingUrl}" target="_blank" rel="noopener">open the booking page</a> to choose your time. If you need help, reply here and we'll connect you with a specialist right away, or visit our contact page for more options.
-                    </div>
-                `, true);
-
-                return;
-            }
-
             addMessage('bot', `
-                <div class="dcg-success-msg">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                    </svg>
-                    <div>
-                        <strong>You're all set to schedule!</strong><br>
-                        We're opening your personalized booking page now. If it doesn't appear, <a href="${bookingUrl}" target="_blank" rel="noopener">tap here to choose a time</a> that works best for you.
-                    </div>
+                <div>
+                    <strong>Meeting scheduling is coming soon.</strong><br>
+                    Our team will reach out with available time slots shortly.
                 </div>
             `, true);
         }
