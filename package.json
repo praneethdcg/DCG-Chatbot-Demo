@@ -9,7 +9,7 @@
   "dependencies": {
     "@upstash/ratelimit": "^0.4.0",
     "@upstash/redis": "^1.24.0",
-    "jsforce": "^2.0.0"
+    "jsforce": "^1.11.1"
   },
   "author": "",
   "license": "ISC"
