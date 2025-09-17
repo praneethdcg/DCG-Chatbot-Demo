@@ -16,7 +16,10 @@
         }
 
         body.sidebar-mode {
-            background: transparent;
+            background: #0b3c3e;
+            background-image: radial-gradient(circle at top right, rgba(20, 184, 166, 0.35), transparent 55%),
+                              radial-gradient(circle at bottom left, rgba(13, 148, 136, 0.3), transparent 60%),
+                              linear-gradient(135deg, #0f172a 0%, #0b3c3e 45%, #042f2e 100%);
             width: 100%;
             height: 100%;
             overflow-x: hidden;
@@ -63,6 +66,51 @@
 
         body.sidebar-mode .dcg-header-actions button:last-child {
             display: none;
+        }
+
+        body.dcg-standalone {
+            padding: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.dcg-standalone #dcg-chat-modal {
+            max-width: 640px;
+            max-height: 90vh;
+            border-radius: 24px;
+        }
+
+        body.dcg-standalone .dcg-modal-header,
+        body.dcg-standalone .dcg-input-container {
+            border-radius: 24px 24px 0 0;
+        }
+
+        body.dcg-standalone .dcg-input-container {
+            border-radius: 0 0 24px 24px;
+        }
+
+        body.dcg-standalone #dcg-bottom-bar,
+        body.dcg-standalone .dcg-mobile-chat-toggle,
+        body.dcg-standalone .dcg-mobile-quick-sheet {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            body.dcg-standalone {
+                padding: 12px;
+            }
+
+            body.dcg-standalone #dcg-chat-modal {
+                max-width: 100%;
+                max-height: 100vh;
+                border-radius: 18px;
+            }
+
+            body.dcg-standalone .dcg-modal-header,
+            body.dcg-standalone .dcg-input-container {
+                border-radius: 18px;
+            }
         }
 
         .dcg-mobile-chat-toggle {
@@ -1105,6 +1153,7 @@
         const isSidebarMode = urlParams.get('mode') === 'sidebar';
         const chatParam = (urlParams.get('chat') || '').toLowerCase();
         const shouldAutoOpenFromUrl = ['1', 'true', 'yes', 'open'].includes(chatParam);
+        const isStandaloneLaunch = shouldAutoOpenFromUrl && !isSidebarMode;
         const mobileMedia = window.matchMedia('(max-width: 768px)');
         let isMobileView = mobileMedia.matches;
         const bottomBarEl = document.getElementById('dcg-bottom-bar');
@@ -1114,8 +1163,12 @@
         const mobileOpenChatBtn = mobileSheet ? mobileSheet.querySelector('[data-mobile-open]') : null;
         const mobileSheetClose = mobileSheet ? mobileSheet.querySelector('.dcg-mobile-quick-sheet__close') : null;
 
-        if (isSidebarMode) {
+        if (isSidebarMode || isStandaloneLaunch) {
             document.body.classList.add('sidebar-mode');
+        }
+
+        if (isStandaloneLaunch) {
+            document.body.classList.add('dcg-standalone');
         }
 
         function escapeHtml(value) {
@@ -1128,7 +1181,7 @@
         }
 
         function applyMobileLayout(isMobile) {
-            if (isSidebarMode) return;
+            if (isSidebarMode || isStandaloneLaunch) return;
             if (isMobile) {
                 if (bottomBarEl) bottomBarEl.style.display = 'none';
                 if (mobileToggle) mobileToggle.style.display = 'flex';
@@ -2437,7 +2490,13 @@
 
         restoreConversation();
 
-        if (!isSidebarMode && shouldAutoOpenFromUrl) {
+        if (isStandaloneLaunch) {
+            setTimeout(() => {
+                if (!isModalOpen) {
+                    openChat();
+                }
+            }, 200);
+        } else if (!isSidebarMode && shouldAutoOpenFromUrl) {
             setTimeout(() => {
                 if (!isModalOpen) {
                     openChat();
