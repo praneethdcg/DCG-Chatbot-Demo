@@ -578,8 +578,8 @@
 <body>
     <header>
         <a class="dcg-back-link" href="index.html">← Back to Demo Homepage</a>
-        <h1>Interactive Savings Workshop</h1>
-        <p>Adjust the sample debt profile below, then run the calculator to see how much you could keep in cash flow every month. When you’re ready, tap “I’m interested” and a DCG specialist will follow up.</p>
+        <h1>Projected Savings Calculator</h1>
+        <p>Adjust the sample debt profile below, then run the calculator to see your projected savings. When you’re ready, tap “I’m interested” and a DCG specialist will reach out within two hours.</p>
     </header>
 
     <main>
@@ -1051,7 +1051,7 @@
             try {
                 const frame = document.getElementById('dcgAllyFrameSidebar');
                 frame.contentWindow.postMessage({ type: 'DCG_INTEREST' }, '*');
-                interestButton.textContent = 'Got it! A specialist will reach out';
+                interestButton.textContent = "Thank you! We'll be in touch";
                 interestButton.disabled = true;
             } catch (error) {
                 console.warn('Unable to notify assistant', error);

@@ -1817,30 +1817,9 @@
                 } else if (lower.includes('save') || lower.includes('savings') || lower.includes('how much')) {
                     addMessage('bot', `
                         <div>
-                            <strong>💰 Your Potential Savings:</strong><br><br>
-
-                            <div style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.18), rgba(4, 47, 46, 0.08)); padding: 16px; border-radius: 8px; margin: 12px 0;">
-                                <strong>DCG clients typically save:</strong><br>
-                                • <strong>40-60%</strong> of total debt<br>
-                                • <strong>30-50%</strong> lower monthly payments<br>
-                                • <strong>5-10 years</strong> off repayment time<br><br>
-
-                                <strong>Example:</strong> $100,000 debt<br>
-                                • Settles for: $40,000-$60,000<br>
-                                • Monthly: $3,500 → $1,750<br>
-                                • Timeline: 15 years → 3 years
-                            </div>
-
-                            <p>Get your exact savings calculation:</p>
-
-                            <div class="dcg-inline-actions" style="margin-top: 12px;">
-                                <button class="dcg-inline-action" onclick="handleInlineAction('calculator')">
-                                    📊 Use Calculator
-                                </button>
-                                <button class="dcg-inline-action" onclick="handleInlineAction('sales')">
-                                    💬 Get Custom Quote
-                                </button>
-                            </div>
+                            <strong>Let's review your savings together.</strong><br><br>
+                            Our specialists will build a personalized plan and walk you through the numbers one-on-one.
+                            <p style="margin-top: 12px;">Just let me know when you're ready, and I'll line up the introduction.</p>
                         </div>
                     `, true);
                 } else if (lower.includes('mca') || lower.includes('merchant cash') || lower.includes('advance')) {
@@ -1892,6 +1871,11 @@
                             </div>
                         </div>
                     `, true);
+                } else if (
+                    lower.includes('specialist about these savings') ||
+                    lower.trim() === 'connect me with a specialist about these savings'
+                ) {
+                    addMessage('bot', 'Thank you for your interest, someone from our team will contact you in the next couple of hours.');
                 } else if (
                     lower.includes('sales') ||
                     lower.includes('specialist') ||
@@ -2047,18 +2031,10 @@
                         </svg>
                         <div>
                             <strong>You're all set, ${firstName}!</strong><br>
-                            I saved your contact details so we can review the numbers together.<br>
-                            <small>Let's open the savings workspace right now.</small>
+                            Thank you for your interest&mdash;someone from our team will contact you in the next couple of hours to review the savings with you.
                         </div>
                     </div>
-                    <div class="dcg-inline-actions" style="margin-top: 12px;">
-                        <button class="dcg-inline-action" onclick="navigateToSavingsWorkspace()">
-                            🚀 Launch savings workspace
-                        </button>
-                    </div>
                 `, true);
-
-                setTimeout(() => navigateToSavingsWorkspace(), 900);
             } else {
                 addMessage('bot', `
                     <div class="dcg-success-msg">
@@ -2067,15 +2043,9 @@
                         </svg>
                         <div>
                             <strong>🎉 Success! Consultation Scheduled</strong><br>
-                            A DCG specialist will call you within 2 hours (during business hours).<br>
-                            <small>Thank you for your submission!</small>
+                            Thank you for your interest, someone from our team will contact you in the next couple of hours.<br>
+                            <small>We look forward to speaking with you.</small>
                         </div>
-                    </div>
-                    <p style="margin-top: 12px;">While you wait, feel free to explore our calculator or ask me any questions!</p>
-                    <div class="dcg-inline-actions" style="margin-top: 12px;">
-                        <button class="dcg-inline-action" onclick="window.open('https://mcarelief.debtconsultantsgroup.com/calculator/form?utm_source=dcg-chatbot&utm_medium=ally&utm_campaign=post-consult-cta', '_blank')">
-                            📊 Open savings calculator
-                        </button>
                     </div>
                 `, true);
             }
