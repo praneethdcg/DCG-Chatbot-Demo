@@ -8,3 +8,8 @@ body.dcg-direct .dcg-mobile-chat-toggle,
 body.dcg-direct .dcg-mobile-quick-sheet {
     display: none !important;
 }
+
+body.dcg-direct {
+    background: radial-gradient(circle at top left, #042f2e 0%, #0b3c3e 40%, #03111a 100%);
+    color: #0B3C3E;
+}

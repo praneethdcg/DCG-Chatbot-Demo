@@ -260,7 +260,6 @@
 
         if (isDirectLaunch) {
             document.body.classList.remove('dcg-landing');
-            document.body.classList.remove('dcg-standalone');
             document.body.classList.add('dcg-direct');
         }
 
@@ -280,6 +279,13 @@
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', updateViewportUnit);
             window.visualViewport.addEventListener('scroll', updateViewportUnit);
+        }
+
+        if (isDirectLaunch) {
+            const minimizeBtn = document.querySelector('.dcg-header-actions button:last-child');
+            if (minimizeBtn) {
+                minimizeBtn.style.display = 'none';
+            }
         }
 
         function escapeHtml(value) {
@@ -610,6 +616,9 @@
 
         // Minimize chat
         function minimizeChat() {
+            if (isDirectLaunch) {
+                return;
+            }
             if (isSidebarMode) {
                 return;
             }

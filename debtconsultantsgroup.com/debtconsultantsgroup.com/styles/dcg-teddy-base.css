@@ -656,7 +656,7 @@
 
         .dcg-inline-action.dcg-followup-btn {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 14px;
             justify-content: flex-start;
             padding: 14px 18px;
@@ -665,7 +665,7 @@
             box-shadow: 0 14px 30px rgba(15, 118, 110, 0.35);
             font-size: 14px;
             line-height: 1.4;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             text-align: left;
         }
 
@@ -678,6 +678,7 @@
             gap: 4px;
             text-align: left;
             min-width: 0;
+            flex: 1;
         }
 
         .dcg-followup-content strong {
