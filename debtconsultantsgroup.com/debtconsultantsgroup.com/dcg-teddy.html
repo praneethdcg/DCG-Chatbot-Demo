@@ -224,9 +224,6 @@
         </div>
     <script>
         const rootElement = document.documentElement;
-        if (window.self !== window.top) {
-            document.body.classList.add('dcg-embedded');
-        }
         let isModalOpen = false;
         let messages = [];
         let isTyping = false;
@@ -254,6 +251,7 @@
         const SAVINGS_PAGE = 'dcg-savings-workshop.html';
         const urlParams = new URLSearchParams(window.location.search);
         const isSidebarMode = urlParams.get('mode') === 'sidebar';
+        const isEmbedded = window.self !== window.top;
         const chatParam = (urlParams.get('chat') || '').toLowerCase();
         const shouldAutoOpenFromUrl = ['1', 'true', 'yes', 'open'].includes(chatParam);
         const isDirectLaunch = shouldAutoOpenFromUrl && !isSidebarMode;
@@ -1830,7 +1828,7 @@
                     openChat();
                 }
             }, 200);
-        } else if (!isSidebarMode && shouldAutoOpenFromUrl) {
+        } else if (!isSidebarMode && !isEmbedded && shouldAutoOpenFromUrl) {
             setTimeout(() => {
                 if (!isModalOpen) {
                     logAutoOpenUtms();
