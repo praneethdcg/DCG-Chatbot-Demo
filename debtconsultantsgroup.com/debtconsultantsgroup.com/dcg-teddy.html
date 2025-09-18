@@ -941,6 +941,16 @@
                 case 'interest':
                     message = "I'm interested in these savings";
                     break;
+                case 'chat':
+                    const chatMessage = 'Chat with live agent';
+                    addMessage('user', chatMessage);
+                    if (conversationContext.hasProvidedContact) {
+                        handleChatWithAgent(null);
+                    } else {
+                        addMessage('bot', 'Perfect! I\'ll connect you with a live chat specialist. Please provide your contact information first so they can assist you properly:');
+                        showContactForm();
+                    }
+                    return;
                 case 'end-session':
                     promptEndSession();
                     return;
@@ -1343,6 +1353,20 @@
                         </div>
                     `, true);
                     showContactForm();
+                } else if (
+                    lower.includes('chat with agent') ||
+                    lower.includes('connect to agent') ||
+                    lower.includes('connect with rep') ||
+                    lower.includes('chat with rep') ||
+                    lower.includes('live chat') ||
+                    (lower.includes('chat') && (lower.includes('agent') || lower.includes('rep') || lower.includes('specialist')))
+                ) {
+                    if (conversationContext.hasProvidedContact) {
+                        handleChatWithAgent(null);
+                    } else {
+                        addMessage('bot', 'Perfect! I\'ll connect you with a live chat specialist. Please provide your contact information first so they can assist you properly:');
+                        showContactForm();
+                    }
                 } else if (
                     lower.includes('sales') ||
                     lower.includes('specialist') ||
