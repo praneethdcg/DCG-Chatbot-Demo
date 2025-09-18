@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>DCG Assistant - AI-Powered Debt Relief</title>
     <link rel="stylesheet" href="styles/dcg-teddy-base.css">
+    <script type='text/javascript'>
+    function initEmbeddedMessaging() {
+        try {
+            embeddedservice_bootstrap.settings.language = 'en_US';
+            embeddedservice_bootstrap.init(
+                '00DOy00000K9djN',
+                'QRMCA_Chatbot_Deployment',
+                'https://dmpbalance--uat.sandbox.my.site.com/ESWQRMCAChatbotDeployme1758232683684',
+                {
+                    scrt2URL: 'https://dmpbalance--uat.sandbox.my.salesforce-scrt.com'
+                }
+            );
+        } catch (err) {
+            console.error('Error loading Embedded Messaging: ', err);
+        }
+    };
+    </script>
+    <script type='text/javascript' src='https://dmpbalance--uat.sandbox.my.site.com/ESWQRMCAChatbotDeployme1758232683684/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
+    <script>
+      window.addEventListener('onEmbeddedMessagingReady', function() {
+        window.isMIAWReady = true;
+        console.log('Salesforce MIAW is ready');
+      });
+    </script>
 </head>
 <body>
     <script>
@@ -250,6 +274,7 @@
         const CHAT_STORAGE_KEY = 'dcgAssistantSession';
         const SAVINGS_PAGE = 'dcg-savings-workshop.html';
         const SALES_PHONE = { raw: '8446113328', display: '(844) 611-3328' };
+        let isMIAWReady = window.isMIAWReady === true;
         const urlParams = new URLSearchParams(window.location.search);
         const isSidebarMode = urlParams.get('mode') === 'sidebar';
         const isEmbedded = window.self !== window.top;
@@ -1462,6 +1487,14 @@
                                 </span>
                                 <span class="dcg-followup-chevron">›</span>
                             </button>
+                            <button class="dcg-inline-action dcg-followup-btn" onclick="handleChatWithAgent(event)">
+                                <span class="dcg-followup-icon">💬</span>
+                                <span class="dcg-followup-content">
+                                    <strong>Chat with live agent</strong>
+                                    <span class="dcg-followup-sub">Start an instant chat with a specialist.</span>
+                                </span>
+                                <span class="dcg-followup-chevron">›</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1800,6 +1833,97 @@
                     Our team will reach out with available time slots shortly.
                 </div>
             `, true);
+        }
+
+        function handleChatWithAgent(event) {
+            if (event && event.currentTarget) {
+                const actionContainer = event.currentTarget.closest('.dcg-inline-actions');
+                if (actionContainer) {
+                    Array.from(actionContainer.querySelectorAll('button')).forEach((button) => {
+                        button.disabled = true;
+                    });
+                }
+            }
+
+            const hasUtilApi = !!(window.embeddedservice_bootstrap && window.embeddedservice_bootstrap.utilAPI);
+
+            if (!isMIAWReady && !hasUtilApi) {
+                addMessage('bot', `
+                    <div class="dcg-success-msg">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        <div>
+                            <strong>Connecting you to live chat...</strong><br>
+                            Please wait a moment while we initialize the chat system.
+                        </div>
+                    </div>
+                `, true);
+
+                // Retry after a short delay
+                setTimeout(() => {
+                    const retryHasUtilApi = !!(window.embeddedservice_bootstrap && window.embeddedservice_bootstrap.utilAPI);
+                    if (isMIAWReady || retryHasUtilApi) {
+                        if (retryHasUtilApi && !isMIAWReady) {
+                            isMIAWReady = true;
+                            window.isMIAWReady = true;
+                        }
+                        launchSalesforceChat();
+                    } else {
+                        addMessage('bot', `
+                            <div>
+                                <strong>Chat system is temporarily unavailable.</strong><br>
+                                Please try calling our sales team at <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a> or try again in a moment.
+                            </div>
+                        `, true);
+                    }
+                }, 2000);
+                return;
+            }
+
+            if (hasUtilApi && !isMIAWReady) {
+                isMIAWReady = true;
+                window.isMIAWReady = true;
+            }
+
+            addMessage('bot', `
+                <div class="dcg-success-msg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <div>
+                        <strong>Launching live chat...</strong><br>
+                        You'll be connected with a debt relief specialist in just a moment.
+                    </div>
+                </div>
+            `, true);
+
+            launchSalesforceChat();
+        }
+
+        function launchSalesforceChat() {
+            try {
+                // Use the Salesforce embedded messaging API to open chat
+                if (window.embeddedservice_bootstrap && window.embeddedservice_bootstrap.utilAPI) {
+                    window.embeddedservice_bootstrap.utilAPI.openWidget();
+                } else {
+                    console.error('Salesforce embedded messaging API not available');
+                    addMessage('bot', `
+                        <div>
+                            <strong>Unable to launch chat at this time.</strong><br>
+                            Please call our sales team at <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a> for immediate assistance.
+                        </div>
+                    `, true);
+                }
+            } catch (error) {
+                console.error('Error launching Salesforce chat:', error);
+                addMessage('bot', `
+                    <div>
+                        <strong>Chat connection failed.</strong><br>
+                        Please call our sales team at <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a> for immediate assistance.
+                    </div>
+                `, true);
+            }
         }
 
         // Microphone placeholder function
