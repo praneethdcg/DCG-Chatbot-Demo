@@ -368,6 +368,21 @@
             color: #B45309;
         }
 
+        .dcg-summary-cta {
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 18px;
+            background: rgba(20, 184, 166, 0.12);
+            border: 1px solid rgba(20, 184, 166, 0.28);
+            display: none;
+        }
+
+        .dcg-summary-cta p {
+            margin: 0 0 12px;
+            color: #0B3C3E;
+            font-weight: 600;
+        }
+
         .dcg-next-steps {
             background: rgba(4, 47, 46, 0.08);
             border-radius: 18px;
@@ -637,7 +652,6 @@
                 <div class="dcg-run-panel">
                     <div class="dcg-actions">
                         <button type="button" id="dcg-run-calculation" class="dcg-primary-button">Run savings estimate</button>
-                        <button type="button" id="dcg-interest-button" class="dcg-secondary-button" disabled>I'm interested in these savings</button>
                     </div>
                     <div id="dcg-run-status" class="dcg-status dcg-status-info">Adjust the inputs above and run your estimate when you’re ready.</div>
                 </div>
@@ -669,6 +683,10 @@
                         </div>
                     </div>
                     <div id="dcg-qualification" class="dcg-qualification dcg-warning">Enter at least $25,000 in unsecured debt to check eligibility.</div>
+                    <div id="dcg-interest-cta" class="dcg-summary-cta">
+                        <p>Tap “I'm interested in these savings” to connect with a specialist.</p>
+                        <button type="button" id="dcg-interest-button" class="dcg-secondary-button" disabled>I'm interested in these savings</button>
+                    </div>
                 </div>
             </section>
 
@@ -760,6 +778,9 @@
 
         function markChatNotification() {
             if (!isCompact || !chatToggle) return;
+            if (!isChatVisible) {
+                chatToggle.textContent = '💬';
+            }
             chatToggle.classList.add('dcg-notification');
             chatToggle.setAttribute('aria-label', 'Open chat (new message)');
         }
@@ -768,9 +789,14 @@
             if (!chatToggle) return;
             chatToggle.classList.remove('dcg-notification');
             if (isCompact) {
-                chatToggle.setAttribute('aria-label', isChatVisible ? 'Close chat' : 'Open chat');
+                chatToggle.setAttribute('aria-label', isChatVisible ? 'Minimize chat' : 'Open chat');
             } else {
                 chatToggle.setAttribute('aria-label', 'Open chat');
+            }
+            if (isChatVisible) {
+                chatToggle.textContent = '⌄';
+            } else {
+                chatToggle.textContent = '💬';
             }
         }
 
@@ -798,6 +824,7 @@
             if (chatToggle) {
                 chatToggle.style.display = 'flex';
                 chatToggle.classList.add('dcg-open');
+                chatToggle.textContent = '⌄';
                 chatToggle.setAttribute('aria-label', 'Close quick actions');
             }
             clearChatNotification();
@@ -831,16 +858,13 @@
             closeQuickSheet();
 
             if (chatToggle) {
-                chatToggle.style.display = 'none';
-                chatToggle.classList.remove('dcg-open');
-                chatToggle.setAttribute('aria-label', 'Open chat');
+                chatToggle.style.display = 'flex';
+                chatToggle.classList.add('dcg-open');
+                chatToggle.textContent = '⌄';
+                chatToggle.setAttribute('aria-label', 'Minimize chat');
             }
 
-            if (isCompact) {
-                setChatBackdrop('chat');
-            } else {
-                setChatBackdrop(null);
-            }
+            setChatBackdrop(null);
 
             clearChatNotification();
 
@@ -859,12 +883,14 @@
                 chatToggle.style.display = 'flex';
                 chatToggle.classList.remove('dcg-open');
                 chatToggle.setAttribute('aria-label', 'Open chat');
+                chatToggle.textContent = '💬';
             }
 
             if (isQuickSheetVisible) {
                 setChatBackdrop('sheet');
                 if (chatToggle) {
                     chatToggle.classList.add('dcg-open');
+                    chatToggle.textContent = '⌄';
                     chatToggle.setAttribute('aria-label', 'Close quick actions');
                 }
             } else {
@@ -1027,6 +1053,7 @@
         const lenderRowsEl = document.getElementById('dcg-lender-rows');
         const addRowBtn = document.getElementById('dcg-add-lender');
         const runButton = document.getElementById('dcg-run-calculation');
+        const interestCta = document.getElementById('dcg-interest-cta');
         const interestButton = document.getElementById('dcg-interest-button');
         const statusEl = document.getElementById('dcg-run-status');
         const summaryWrapper = document.getElementById('dcg-summary-wrapper');
@@ -1267,6 +1294,9 @@
                 updateStatus('Inputs updated. Click “Run savings estimate” to refresh.', 'dirty');
                 interestButton.disabled = true;
                 interestButton.textContent = "I'm interested in these savings";
+                if (interestCta && hasRun) {
+                    interestCta.style.display = 'block';
+                }
             }
         }
 
@@ -1298,6 +1328,9 @@
             isDirty = false;
             updateStatus('Estimates updated just now.', 'info');
             summaryWrapper.classList.add('dcg-visible');
+            if (interestCta) {
+                interestCta.style.display = 'block';
+            }
             interestButton.disabled = false;
             interestButton.textContent = "I'm interested in these savings";
             launchConfetti();
