@@ -249,6 +249,7 @@
         const MAX_MESSAGES = 100;
         const CHAT_STORAGE_KEY = 'dcgAssistantSession';
         const SAVINGS_PAGE = 'dcg-savings-workshop.html';
+        const SALES_PHONE = { raw: '8446113328', display: '(844) 611-3328' };
         const urlParams = new URLSearchParams(window.location.search);
         const isSidebarMode = urlParams.get('mode') === 'sidebar';
         const isEmbedded = window.self !== window.top;
@@ -1445,11 +1446,11 @@
                         <strong>Thank you for providing your contact information!</strong><br>
                         How would you prefer to connect with our specialist?
                         <div class="dcg-inline-actions dcg-followup-actions">
-                            <button class="dcg-inline-action dcg-followup-btn" onclick="handleContactIn2Hours(event)">
-                                <span class="dcg-followup-icon">⏱️</span>
+                            <button class="dcg-inline-action dcg-followup-btn" onclick="handleCallSalesRep(event)">
+                                <span class="dcg-followup-icon">📞</span>
                                 <span class="dcg-followup-content">
-                                    <strong>Contact me in 2 hours</strong>
-                                    <span class="dcg-followup-sub">We'll prioritize a callback in the next two hours.</span>
+                                    <strong>Call a live sales rep</strong>
+                                    <span class="dcg-followup-sub">Speak with a specialist right now.</span>
                                 </span>
                                 <span class="dcg-followup-chevron">›</span>
                             </button>
@@ -1737,7 +1738,7 @@
             }
         }
 
-        function handleContactIn2Hours(event) {
+        function handleCallSalesRep(event) {
             if (event && event.currentTarget) {
                 const actionContainer = event.currentTarget.closest('.dcg-inline-actions');
                 if (actionContainer) {
@@ -1746,18 +1747,41 @@
                     });
                 }
             }
-
             addMessage('bot', `
                 <div class="dcg-success-msg">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                     </svg>
                     <div>
-                        <strong>Got it!</strong><br>
-                        Someone from our team will reach out within the next two hours.
+                        <strong>You're connected to a specialist.</strong><br>
+                        Opening your phone app to call <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a>.
                     </div>
                 </div>
             `, true);
+
+            try {
+                window.location.href = `tel:${SALES_PHONE.raw}`;
+            } catch (e) {
+                try {
+                    if (window.top && window.top !== window) {
+                        window.top.location.href = `tel:${SALES_PHONE.raw}`;
+                        return;
+                    }
+                } catch (topError) {
+                    // Ignore cross-origin access errors when attempting to reach the parent frame.
+                }
+
+                try {
+                    const a = document.createElement('a');
+                    a.href = `tel:${SALES_PHONE.raw}`;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } catch (e2) {
+                    console.warn('Unable to open dialer automatically', e2);
+                }
+            }
         }
 
         function handleBookMeeting(event) {
