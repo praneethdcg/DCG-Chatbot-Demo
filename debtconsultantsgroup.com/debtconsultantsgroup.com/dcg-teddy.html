@@ -15,7 +15,28 @@
             const isSidebar = params.get('mode') === 'sidebar';
             const shouldAuto = ['1', 'true', 'yes', 'open'].includes((params.get('chat') || '').toLowerCase());
             const isEmbedded = window.self !== window.top;
-            const isDirect = shouldAuto && !isSidebar && !isEmbedded;
+            if (shouldAuto) {
+                const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+                const utmValues = utmKeys.reduce((acc, key) => {
+                    const value = params.get(key);
+                    if (value) {
+                        acc[key] = value;
+                    }
+                    return acc;
+                }, {});
+                const utmPayload = {
+                    capturedAt: new Date().toISOString(),
+                    params: utmValues
+                };
+                try {
+                    const existing = sessionStorage.getItem('dcgUtmParameters');
+                    if (Object.keys(utmValues).length > 0 || !existing) {
+                        sessionStorage.setItem('dcgUtmParameters', JSON.stringify(utmPayload));
+                    }
+                } catch (error) {
+                    console.warn('Unable to store UTM parameters', error);
+                }
+            }
             const mq = window.matchMedia('(max-width: 768px)');
             const applyViewport = () => {
                 const mobile = mq.matches;
@@ -24,10 +45,6 @@
             };
             applyViewport();
             loadStyle(mq.matches ? 'styles/dcg-teddy-mobile.css' : 'styles/dcg-teddy-desktop.css');
-            if (isDirect) {
-                document.body && document.body.classList.add('dcg-direct');
-                loadStyle('styles/dcg-teddy-standalone.css');
-            }
             if (isSidebar || isEmbedded) {
                 document.body && document.body.classList.add('dcg-embedded');
                 loadStyle('styles/dcg-teddy-embedded.css');
@@ -258,11 +275,6 @@
             document.body.classList.add('dcg-landing');
         }
 
-        if (isDirectLaunch) {
-            document.body.classList.remove('dcg-landing');
-            document.body.classList.add('dcg-direct');
-        }
-
         if (isSidebarMode) {
             document.body.classList.add('sidebar-mode');
         }
@@ -279,13 +291,6 @@
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', updateViewportUnit);
             window.visualViewport.addEventListener('scroll', updateViewportUnit);
-        }
-
-        if (isDirectLaunch) {
-            const minimizeBtn = document.querySelector('.dcg-header-actions button:last-child');
-            if (minimizeBtn) {
-                minimizeBtn.style.display = 'none';
-            }
         }
 
         function escapeHtml(value) {
@@ -616,9 +621,6 @@
 
         // Minimize chat
         function minimizeChat() {
-            if (isDirectLaunch) {
-                return;
-            }
             if (isSidebarMode) {
                 return;
             }
@@ -1808,17 +1810,30 @@
             }
         }
 
+        function logAutoOpenUtms() {
+            try {
+                const stored = sessionStorage.getItem('dcgUtmParameters');
+                if (stored) {
+                    console.log('DCG auto-open UTM parameters', JSON.parse(stored));
+                }
+            } catch (error) {
+                console.warn('Unable to read preserved UTM parameters', error);
+            }
+        }
+
         restoreConversation();
 
         if (isDirectLaunch) {
             setTimeout(() => {
                 if (!isModalOpen) {
+                    logAutoOpenUtms();
                     openChat();
                 }
             }, 200);
         } else if (!isSidebarMode && shouldAutoOpenFromUrl) {
             setTimeout(() => {
                 if (!isModalOpen) {
+                    logAutoOpenUtms();
                     openChat();
                 }
             }, 300);
