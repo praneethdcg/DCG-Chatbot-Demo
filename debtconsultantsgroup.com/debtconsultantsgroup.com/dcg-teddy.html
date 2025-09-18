@@ -21,6 +21,14 @@
             --dcg-vh: 1vh;
         }
 
+        .dcg-landing-wrapper {
+            display: none;
+        }
+
+        body.dcg-landing .dcg-landing-wrapper {
+            display: block;
+        }
+
         .dcg-landing-hero {
             background: linear-gradient(135deg, #0B3C3E 0%, #0D9488 100%);
             color: white;
@@ -114,7 +122,9 @@
         body.sidebar-mode .dcg-landing-hero,
         body.sidebar-mode .dcg-landing-main,
         body.dcg-standalone .dcg-landing-hero,
-        body.dcg-standalone .dcg-landing-main {
+        body.dcg-standalone .dcg-landing-main,
+        body.dcg-embedded .dcg-landing-hero,
+        body.dcg-embedded .dcg-landing-main {
             display: none;
         }
 
@@ -1134,54 +1144,56 @@
     </style>
 </head>
 <body>
-    <header class="dcg-landing-hero">
-        <div class="dcg-landing-hero__inner">
-            <div class="dcg-landing-hero__brand">
-                <img src="DCG-AI-bot-userpic-01.png" alt="DCG" class="dcg-landing-logo" width="96" height="96" />
-                <div class="dcg-landing-copy">
-                    <a class="dcg-back-link" href="index.html">← Back</a>
-                    <h1>Talk with the DCG Savings Assistant</h1>
-                    <p>Model your debt relief plan, capture weekly payment options, and connect with a specialist without leaving the conversation.</p>
+    <div class="dcg-landing-wrapper">
+        <header class="dcg-landing-hero">
+            <div class="dcg-landing-hero__inner">
+                <div class="dcg-landing-hero__brand">
+                    <img src="DCG-AI-bot-userpic-01.png" alt="DCG" class="dcg-landing-logo" width="96" height="96" />
+                    <div class="dcg-landing-copy">
+                        <a class="dcg-back-link" href="index.html">← Back</a>
+                        <h1>Talk with the DCG Savings Assistant</h1>
+                        <p>Model your debt relief plan, capture weekly payment options, and connect with a specialist without leaving the conversation.</p>
+                    </div>
+                </div>
+                <div class="dcg-landing-highlight">
+                    <div class="dcg-landing-pill">
+                        <span>📊</span>
+                        <div>
+                            <strong>Run savings scenarios</strong>
+                            Compare weekly payments and settlement ranges in real-time.
+                        </div>
+                    </div>
+                    <div class="dcg-landing-pill">
+                        <span>🤝</span>
+                        <div>
+                            <strong>Qualify in minutes</strong>
+                            Share your debt profile and see if DCG is a fit for your business.
+                        </div>
+                    </div>
+                    <div class="dcg-landing-pill">
+                        <span>⚡</span>
+                        <div>
+                            <strong>Hand off to a specialist</strong>
+                            Tap “I’m interested” and we’ll follow up within two hours.
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="dcg-landing-highlight">
-                <div class="dcg-landing-pill">
-                    <span>📊</span>
-                    <div>
-                        <strong>Run savings scenarios</strong>
-                        Compare weekly payments and settlement ranges in real-time.
-                    </div>
-                </div>
-                <div class="dcg-landing-pill">
-                    <span>🤝</span>
-                    <div>
-                        <strong>Qualify in minutes</strong>
-                        Share your debt profile and see if DCG is a fit for your business.
-                    </div>
-                </div>
-                <div class="dcg-landing-pill">
-                    <span>⚡</span>
-                    <div>
-                        <strong>Hand off to a specialist</strong>
-                        Tap “I’m interested” and we’ll follow up within two hours.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+        </header>
 
-    <main class="dcg-landing-main">
-        <section class="dcg-landing-card">
-            <h2>What to expect</h2>
-            <p>Use the assistant below to estimate your weekly payment and projected savings. You can restart the calculator, request a callback, or ask for program details without leaving the chat.</p>
-            <ul style="margin: 0; padding-left: 20px; color: #0F172A; display: grid; gap: 6px;">
-                <li>Enter your debt mix or import an existing scenario from the savings calculator.</li>
-                <li>Ask the assistant about qualification, settlement ranges, or legal protection.</li>
-                <li>When you’re ready, tap <strong>“I’m interested in these savings”</strong> to schedule a review.</li>
-            </ul>
-        </section>
+        <main class="dcg-landing-main">
+            <section class="dcg-landing-card">
+                <h2>What to expect</h2>
+                <p>Use the assistant below to estimate your weekly payment and projected savings. You can restart the calculator, request a callback, or ask for program details without leaving the chat.</p>
+                <ul style="margin: 0; padding-left: 20px; color: #0F172A; display: grid; gap: 6px;">
+                    <li>Enter your debt mix or import an existing scenario from the savings calculator.</li>
+                    <li>Ask the assistant about qualification, settlement ranges, or legal protection.</li>
+                    <li>When you’re ready, tap <strong>“I’m interested in these savings”</strong> to schedule a review.</li>
+                </ul>
+            </section>
+        </main>
+    </div>
 
-    <!-- Backdrop -->
     <div id="dcg-backdrop" onclick="minimizeChat()"></div>
 
     <!-- Bottom Bar -->
@@ -1302,12 +1314,11 @@
                 </button>
             </form>
         </div>
-    </div>
-
-    </main>
-
     <script>
         const rootElement = document.documentElement;
+        if (window.self !== window.top) {
+            document.body.classList.add('dcg-embedded');
+        }
         let isModalOpen = false;
         let messages = [];
         let isTyping = false;
@@ -1350,6 +1361,10 @@
 
         if (navigator.virtualKeyboard && 'overlaysContent' in navigator.virtualKeyboard) {
             navigator.virtualKeyboard.overlaysContent = true;
+        }
+
+        if (!isSidebarMode) {
+            document.body.classList.add('dcg-landing');
         }
 
         if (isSidebarMode || isStandaloneLaunch) {
