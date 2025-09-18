@@ -147,22 +147,22 @@
         }
 
         body.sidebar-mode #dcg-chat-modal {
+            position: fixed;
+            inset: auto 16px 14vh;
+            width: auto;
             max-width: 420px;
             margin: 0 auto;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            transform: none;
-            width: 100%;
-            max-width: none;
-            height: calc(var(--dcg-vh, 1vh) * 100);
-            max-height: none;
-            border-radius: 18px;
+            transform: translate(-50%, -50%);
+            left: 50%;
+            top: unset;
+            bottom: 16vh;
+            height: min(520px, calc(var(--dcg-vh, 1vh) * 80));
+            max-height: min(560px, calc(var(--dcg-vh, 1vh) * 80));
+            border-radius: 24px;
             opacity: 1;
             visibility: visible;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-            overflow-x: hidden;
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
         }
 
         body.sidebar-mode #dcg-chat-modal.active {
@@ -189,9 +189,9 @@
         }
 
         body.dcg-standalone #dcg-chat-modal {
-            max-width: 640px;
-            max-height: calc(var(--dcg-vh, 1vh) * 100 - 48px);
-            height: calc(var(--dcg-vh, 1vh) * 100 - 48px);
+            max-width: 520px;
+            height: min(560px, calc(var(--dcg-vh, 1vh) * 80));
+            max-height: min(560px, calc(var(--dcg-vh, 1vh) * 80));
             border-radius: 24px;
         }
 
@@ -216,15 +216,18 @@
             }
 
             body.dcg-standalone #dcg-chat-modal {
-                max-width: 100%;
-                max-height: calc(var(--dcg-vh, 1vh) * 100 - 24px);
-                height: calc(var(--dcg-vh, 1vh) * 100 - 24px);
-                border-radius: 18px;
+                width: calc(100% - 24px);
+                left: 50%;
+                transform: translate(-50%, 0);
+                bottom: 16px;
+                height: min(520px, calc(var(--dcg-vh, 1vh) * 78));
+                max-height: min(520px, calc(var(--dcg-vh, 1vh) * 78));
+                border-radius: 20px;
             }
 
             body.dcg-standalone .dcg-modal-header,
             body.dcg-standalone .dcg-input-container {
-                border-radius: 18px;
+                border-radius: 20px;
             }
         }
 
