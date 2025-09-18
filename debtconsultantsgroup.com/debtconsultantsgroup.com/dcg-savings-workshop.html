@@ -21,23 +21,54 @@
         }
 
         header {
-            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
+            background: linear-gradient(135deg, #0B3C3E 0%, #0D9488 100%);
             color: white;
-            padding: 52px 24px 44px;
+            padding: 48px 24px;
+        }
+
+        .dcg-hero {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: clamp(20px, 6vw, 48px);
+        }
+
+        .dcg-logo {
+            width: clamp(72px, 14vw, 100px);
+            height: clamp(72px, 14vw, 100px);
+            border-radius: 32px;
+            box-shadow: 0 24px 40px rgba(5, 150, 105, 0.35);
+        }
+
+        .dcg-hero-copy {
+            display: grid;
+            gap: 8px;
         }
 
         header h1 {
-            margin: 0 0 12px;
-            font-size: 36px;
-            letter-spacing: -0.02em;
+            margin: 6px 0;
+            font-size: clamp(28px, 5vw, 40px);
+            letter-spacing: -0.03em;
         }
 
         header p {
             margin: 0;
-            max-width: 780px;
+            max-width: 760px;
             font-size: 16px;
-            line-height: 1.6;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.88);
+        }
+
+        .dcg-back-link {
             color: rgba(255,255,255,0.85);
+            font-weight: 600;
+            text-decoration: none;
+            letter-spacing: 0.02em;
+        }
+
+        .dcg-back-link:hover {
+            text-decoration: underline;
         }
 
         main {
@@ -288,68 +319,77 @@
         .dcg-summary {
             background: linear-gradient(135deg, rgba(20, 184, 166, 0.18), rgba(6, 182, 212, 0.08));
             border: 1px solid rgba(20, 184, 166, 0.22);
-            border-radius: 24px;
-            padding: 28px;
+            border-radius: 28px;
+            padding: 32px;
             display: grid;
-            gap: 24px;
+            gap: 28px;
             position: relative;
             overflow: hidden;
         }
 
         .dcg-summary-hero {
             display: grid;
-            gap: 8px;
+            gap: 10px;
             text-align: left;
         }
 
         .dcg-summary-label {
             text-transform: uppercase;
             font-size: 12px;
-            letter-spacing: 0.12em;
-            color: #14B8A6;
+            letter-spacing: 0.14em;
+            color: #0D9488;
             font-weight: 600;
         }
 
         .dcg-summary-value {
-            font-size: 42px;
+            font-size: clamp(36px, 6vw, 48px);
             font-weight: 700;
-            letter-spacing: -0.03em;
+            letter-spacing: -0.04em;
             color: #0B3C3E;
         }
 
         .dcg-summary-sub {
-            font-size: 14px;
-            color: #475569;
+            font-size: 15px;
+            color: #0F172A;
+            line-height: 1.5;
         }
 
-        .dcg-summary-grid {
+        .dcg-summary-metrics {
             display: grid;
             gap: 18px;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         }
 
-        .dcg-summary-card {
+        .dcg-summary-metric {
             background: white;
-            border-radius: 16px;
-            padding: 18px;
-            border: 1px solid rgba(20, 184, 166, 0.18);
-            box-shadow: 0 14px 28px rgba(20, 184, 166, 0.12);
+            border-radius: 18px;
+            padding: 20px;
+            border: 1px solid rgba(20, 184, 166, 0.2);
+            box-shadow: 0 16px 28px rgba(20, 184, 166, 0.14);
             display: grid;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .dcg-summary-card span {
+        .dcg-summary-metric span {
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #475569;
+            letter-spacing: 0.1em;
+            color: #0F766E;
             font-weight: 600;
         }
 
-        .dcg-summary-card strong {
-            font-size: 20px;
+        .dcg-summary-metric strong {
+            font-size: 26px;
             color: #0B3C3E;
             font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .dcg-summary-metric p {
+            margin: 0;
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.5;
         }
 
         .dcg-qualification {
@@ -631,9 +671,14 @@
 </head>
 <body>
     <header>
-        <a class="dcg-back-link" href="index.html">← Back to Demo Homepage</a>
-        <h1>Projected Savings Calculator</h1>
-        <p>Adjust the sample debt profile below, then run the calculator to see your projected savings. When you’re ready, tap “I’m interested” and a DCG specialist will reach out within two hours.</p>
+        <div class="dcg-hero">
+            <img src="assets/dcg-logo.svg" alt="DCG logo" class="dcg-logo" width="96" height="96" />
+            <div class="dcg-hero-copy">
+                <a class="dcg-back-link" href="index.html">← Back to Demo Homepage</a>
+                <h1>Projected Savings Calculator</h1>
+                <p>Model a fast scenario for your business debt, then share the results with a DCG specialist in one tap.</p>
+            </div>
+        </div>
     </header>
 
     <main>
@@ -660,26 +705,20 @@
             <section id="dcg-summary-wrapper" class="dcg-summary-wrapper">
                 <div class="dcg-summary" id="dcg-summary">
                     <div class="dcg-summary-hero">
-                        <span class="dcg-summary-label">Projected monthly savings</span>
+                        <span class="dcg-summary-label">Your estimated monthly savings</span>
                         <div class="dcg-summary-value" id="dcg-summary-monthly">$0</div>
-                        <div class="dcg-summary-sub">versus your current payment schedule</div>
+                        <p class="dcg-summary-sub">Keep this amount in your business compared to current payments.</p>
                     </div>
-                    <div class="dcg-summary-grid">
-                        <div class="dcg-summary-card">
-                            <span>Current weekly payments</span>
-                            <strong id="dcg-weekly-total">$0</strong>
-                        </div>
-                        <div class="dcg-summary-card">
-                            <span>Recommended weekly payment</span>
+                    <div class="dcg-summary-metrics">
+                        <div class="dcg-summary-metric">
+                            <span>New weekly payment</span>
                             <strong id="dcg-weekly-target">$0</strong>
+                            <p>Projected weekly autopay with the DCG plan</p>
                         </div>
-                        <div class="dcg-summary-card">
-                            <span>Estimated settlement</span>
-                            <strong id="dcg-settlement">$0</strong>
-                        </div>
-                        <div class="dcg-summary-card">
-                            <span>Program length</span>
-                            <strong id="dcg-program-length">0 months</strong>
+                        <div class="dcg-summary-metric">
+                            <span>Weekly savings</span>
+                            <strong id="dcg-weekly-savings">$0</strong>
+                            <p>Less than you pay today</p>
                         </div>
                     </div>
                     <div id="dcg-qualification" class="dcg-qualification dcg-warning">Enter at least $25,000 in unsecured debt to check eligibility.</div>
@@ -1060,10 +1099,8 @@
         const summaryCard = document.getElementById('dcg-summary');
 
         const monthlySavingsEl = document.getElementById('dcg-summary-monthly');
-        const weeklyTotalEl = document.getElementById('dcg-weekly-total');
         const weeklyTargetEl = document.getElementById('dcg-weekly-target');
-        const settlementEl = document.getElementById('dcg-settlement');
-        const programLengthEl = document.getElementById('dcg-program-length');
+        const weeklySavingsEl = document.getElementById('dcg-weekly-savings');
         const qualificationEl = document.getElementById('dcg-qualification');
 
         let hasRun = false;
@@ -1260,19 +1297,22 @@
             });
 
             const weeklyTarget = totalWeeklyPayments * 0.4463;
-            const monthlySavings = Math.max((totalWeeklyPayments - weeklyTarget) * 4.33, 0);
-            const estimatedSettlement = totalBalance * 0.55;
-            const programLengthMonths = totalWeeklyPayments > 0 ? Math.max(18, Math.round((estimatedSettlement / Math.max(weeklyTarget, 1)) * 4)) : 0;
+            const weeklySavings = Math.max(totalWeeklyPayments - weeklyTarget, 0);
+            const monthlySavings = weeklySavings * 4.33;
 
-            return { totalBalance, totalWeeklyPayments, weeklyTarget, monthlySavings, estimatedSettlement, programLengthMonths };
+            return {
+                totalBalance,
+                totalWeeklyPayments,
+                weeklyTarget,
+                weeklySavings,
+                monthlySavings
+            };
         }
 
         function applyMetrics(metrics) {
             monthlySavingsEl.textContent = formatCurrency(metrics.monthlySavings);
-            weeklyTotalEl.textContent = formatCurrency(metrics.totalWeeklyPayments);
             weeklyTargetEl.textContent = formatCurrency(metrics.weeklyTarget);
-            settlementEl.textContent = formatCurrency(metrics.estimatedSettlement);
-            programLengthEl.textContent = metrics.programLengthMonths ? `${metrics.programLengthMonths} months` : '—';
+            weeklySavingsEl.textContent = formatCurrency(metrics.weeklySavings);
 
             const qual = qualificationMessage(metrics.totalBalance, metrics.weeklyTarget);
             qualificationEl.textContent = qual.text;
