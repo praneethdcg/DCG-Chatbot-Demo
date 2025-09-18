@@ -21,9 +21,9 @@
         }
 
         header {
-            background: linear-gradient(135deg, #0B3C3E 0%, #0D9488 100%);
+            background: linear-gradient(135deg, #14B8A6, #0B3C3E);
             color: white;
-            padding: 48px 24px;
+            padding: 52px 24px 44px;
         }
 
         .dcg-hero {
@@ -31,40 +31,39 @@
             margin: 0 auto;
             display: flex;
             align-items: center;
-            gap: clamp(20px, 6vw, 48px);
+            gap: clamp(20px, 5vw, 40px);
         }
 
         .dcg-logo {
-            width: clamp(72px, 14vw, 100px);
-            height: clamp(72px, 14vw, 100px);
-            border-radius: 32px;
-            box-shadow: 0 24px 40px rgba(5, 150, 105, 0.35);
+            width: clamp(60px, 12vw, 90px);
+            height: clamp(60px, 12vw, 90px);
+            border-radius: 24px;
+            box-shadow: 0 20px 38px rgba(6, 182, 212, 0.32);
         }
 
         .dcg-hero-copy {
             display: grid;
-            gap: 8px;
+            gap: 10px;
         }
 
         header h1 {
-            margin: 6px 0;
-            font-size: clamp(28px, 5vw, 40px);
-            letter-spacing: -0.03em;
+            margin: 0;
+            font-size: clamp(28px, 5vw, 38px);
+            letter-spacing: -0.02em;
         }
 
         header p {
             margin: 0;
-            max-width: 760px;
+            max-width: 720px;
             font-size: 16px;
-            line-height: 1.7;
-            color: rgba(255,255,255,0.88);
+            line-height: 1.65;
+            color: rgba(255,255,255,0.85);
         }
 
         .dcg-back-link {
             color: rgba(255,255,255,0.85);
             font-weight: 600;
             text-decoration: none;
-            letter-spacing: 0.02em;
         }
 
         .dcg-back-link:hover {
@@ -672,9 +671,9 @@
 <body>
     <header>
         <div class="dcg-hero">
-            <img src="assets/dcg-logo.svg" alt="DCG logo" class="dcg-logo" width="96" height="96" />
+            <img src="DCG-AI-bot-userpic-01.png" alt="DCG" class="dcg-logo" width="90" height="90" />
             <div class="dcg-hero-copy">
-                <a class="dcg-back-link" href="index.html">← Back to Demo Homepage</a>
+                <a class="dcg-back-link" href="index.html">← Back</a>
                 <h1>Projected Savings Calculator</h1>
                 <p>Model a fast scenario for your business debt, then share the results with a DCG specialist in one tap.</p>
             </div>
@@ -817,9 +816,6 @@
 
         function markChatNotification() {
             if (!isCompact || !chatToggle) return;
-            if (!isChatVisible) {
-                chatToggle.textContent = '💬';
-            }
             chatToggle.classList.add('dcg-notification');
             chatToggle.setAttribute('aria-label', 'Open chat (new message)');
         }
@@ -832,11 +828,7 @@
             } else {
                 chatToggle.setAttribute('aria-label', 'Open chat');
             }
-            if (isChatVisible) {
-                chatToggle.textContent = '⌄';
-            } else {
-                chatToggle.textContent = '💬';
-            }
+            chatToggle.textContent = '💬';
         }
 
         function setChatBackdrop(mode) {
@@ -863,7 +855,6 @@
             if (chatToggle) {
                 chatToggle.style.display = 'flex';
                 chatToggle.classList.add('dcg-open');
-                chatToggle.textContent = '⌄';
                 chatToggle.setAttribute('aria-label', 'Close quick actions');
             }
             clearChatNotification();
@@ -897,13 +888,20 @@
             closeQuickSheet();
 
             if (chatToggle) {
-                chatToggle.style.display = 'flex';
+                if (isCompact) {
+                    chatToggle.style.display = 'none';
+                } else {
+                    chatToggle.style.display = 'none';
+                }
                 chatToggle.classList.add('dcg-open');
-                chatToggle.textContent = '⌄';
                 chatToggle.setAttribute('aria-label', 'Minimize chat');
             }
 
-            setChatBackdrop(null);
+            if (isCompact) {
+                setChatBackdrop('chat');
+            } else {
+                setChatBackdrop(null);
+            }
 
             clearChatNotification();
 
@@ -922,14 +920,12 @@
                 chatToggle.style.display = 'flex';
                 chatToggle.classList.remove('dcg-open');
                 chatToggle.setAttribute('aria-label', 'Open chat');
-                chatToggle.textContent = '💬';
             }
 
             if (isQuickSheetVisible) {
                 setChatBackdrop('sheet');
                 if (chatToggle) {
                     chatToggle.classList.add('dcg-open');
-                    chatToggle.textContent = '⌄';
                     chatToggle.setAttribute('aria-label', 'Close quick actions');
                 }
             } else {
