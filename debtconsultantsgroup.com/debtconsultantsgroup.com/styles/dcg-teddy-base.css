@@ -665,6 +665,8 @@
             box-shadow: 0 14px 30px rgba(15, 118, 110, 0.35);
             font-size: 14px;
             line-height: 1.4;
+            flex-wrap: wrap;
+            text-align: left;
         }
 
         .dcg-followup-icon {
@@ -675,22 +677,27 @@
             display: grid;
             gap: 4px;
             text-align: left;
+            min-width: 0;
         }
 
         .dcg-followup-content strong {
             font-size: 14px;
             font-weight: 600;
+            white-space: normal;
         }
 
         .dcg-followup-sub {
             font-size: 12px;
             opacity: 0.85;
+            white-space: normal;
+            line-height: 1.4;
         }
 
         .dcg-followup-chevron {
             margin-left: auto;
             font-size: 18px;
             opacity: 0.7;
+            align-self: center;
         }
 
         .dcg-header-actions {
