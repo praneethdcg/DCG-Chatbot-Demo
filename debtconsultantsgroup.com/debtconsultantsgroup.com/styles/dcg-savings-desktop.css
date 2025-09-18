@@ -1,0 +1,4 @@
+/* Desktop-specific tweaks */
+body:not(.dcg-mobile) .dcg-card {
+    padding: 48px;
+}

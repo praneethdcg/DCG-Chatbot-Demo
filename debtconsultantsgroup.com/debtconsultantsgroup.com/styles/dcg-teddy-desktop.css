@@ -1,0 +1,7 @@
+/* Desktop overrides for standalone chatbot */
+body.dcg-direct #dcg-chat-modal {
+    max-width: 600px;
+    margin: 4dvh auto;
+    border-radius: 24px;
+    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.18);
+}

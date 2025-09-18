@@ -1,0 +1,10 @@
+/* Standalone landing adjustments */
+body.dcg-direct .dcg-landing-wrapper {
+    display: none;
+}
+
+body.dcg-direct #dcg-bottom-bar,
+body.dcg-direct .dcg-mobile-chat-toggle,
+body.dcg-direct .dcg-mobile-quick-sheet {
+    display: none !important;
+}

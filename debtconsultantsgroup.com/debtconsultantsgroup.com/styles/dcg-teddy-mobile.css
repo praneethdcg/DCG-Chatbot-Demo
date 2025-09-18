@@ -1,0 +1,9 @@
+/* Mobile overrides for standalone chatbot */
+body.dcg-mobile.dcg-direct #dcg-chat-modal {
+    width: calc(100% - 24px);
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 24px;
+    max-height: min(520px, calc(var(--dcg-vh, 1vh) * 88));
+    border-radius: 20px;
+}

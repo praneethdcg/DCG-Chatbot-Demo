@@ -1,0 +1,4 @@
+/* Mobile-specific tweaks */
+body.dcg-mobile .dcg-card {
+    padding: 24px;
+}

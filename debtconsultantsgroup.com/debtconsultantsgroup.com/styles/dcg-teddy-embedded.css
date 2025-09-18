@@ -1,0 +1,8 @@
+/* Embedded iframe tweaks */
+body.sidebar-mode .dcg-landing-wrapper {
+    display: none;
+}
+
+body.sidebar-mode #dcg-chat-modal {
+    border-radius: 18px;
+}
