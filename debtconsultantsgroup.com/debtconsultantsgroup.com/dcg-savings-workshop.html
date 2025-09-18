@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>DCG Projected Savings Calculator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -684,6 +684,38 @@
         const quickSheetClose = quickSheet ? quickSheet.querySelector('.dcg-quick-actions-sheet__close') : null;
         const quickSheetButtons = quickSheet ? Array.from(quickSheet.querySelectorAll('[data-action]')) : [];
 
+        const assistantState = (() => {
+            try {
+                const raw = sessionStorage.getItem('dcgAssistantSession');
+                return raw ? JSON.parse(raw) : null;
+            } catch (error) {
+                console.warn('Unable to read assistant session', error);
+                return null;
+            }
+        })();
+
+        let revealChatOnCompact = !!(assistantState && (assistantState.shouldAutoOpen || assistantState.isModalOpen));
+
+        if (sidebarFrame && revealChatOnCompact) {
+            try {
+                const frameUrl = new URL(sidebarFrame.getAttribute('src') || '', window.location.href);
+                frameUrl.searchParams.set('chat', 'open');
+                sidebarFrame.src = `${frameUrl.pathname}${frameUrl.search}`;
+            } catch (error) {
+                console.warn('Unable to update sidebar frame URL', error);
+            }
+        }
+
+        function markAssistantAutoOpenHandled() {
+            if (!assistantState) return;
+            assistantState.shouldAutoOpen = false;
+            try {
+                sessionStorage.setItem('dcgAssistantSession', JSON.stringify(assistantState));
+            } catch (error) {
+                console.warn('Unable to update assistant session', error);
+            }
+        }
+
         function applySidebarLayout(compact) {
             if (!sidebarFrame) return;
             if (compact) {
@@ -693,14 +725,19 @@
                 sidebarFrame.style.height = 'min(80vh, 560px)';
                 sidebarFrame.style.bottom = '24px';
                 sidebarFrame.style.borderRadius = '20px';
-                sidebarFrame.style.display = 'none';
+                const shouldReveal = revealChatOnCompact;
+                sidebarFrame.style.display = shouldReveal ? 'block' : 'none';
                 if (chatToggle) {
-                    chatToggle.style.display = 'flex';
-                    chatToggle.classList.remove('dcg-open');
+                    chatToggle.style.display = shouldReveal ? 'none' : 'flex';
+                    chatToggle.classList.toggle('dcg-open', shouldReveal);
                 }
                 if (quickSheet) {
                     quickSheet.classList.remove('dcg-open');
                     quickSheet.setAttribute('aria-hidden', 'true');
+                }
+                if (shouldReveal) {
+                    revealChatOnCompact = false;
+                    markAssistantAutoOpenHandled();
                 }
             } else {
                 sidebarFrame.style.width = 'min(420px, 38vw)';
@@ -717,6 +754,9 @@
                 if (quickSheet) {
                     quickSheet.classList.remove('dcg-open');
                     quickSheet.setAttribute('aria-hidden', 'true');
+                }
+                if (assistantState && assistantState.shouldAutoOpen) {
+                    markAssistantAutoOpenHandled();
                 }
             }
         }

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>DCG Assistant - AI-Powered Debt Relief</title>
     <style>
         * {
@@ -15,13 +15,17 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
         }
 
+        :root {
+            --dcg-vh: 1vh;
+        }
+
         body.sidebar-mode {
             background: #0b3c3e;
             background-image: radial-gradient(circle at top right, rgba(20, 184, 166, 0.35), transparent 55%),
                               radial-gradient(circle at bottom left, rgba(13, 148, 136, 0.3), transparent 60%),
                               linear-gradient(135deg, #0f172a 0%, #0b3c3e 45%, #042f2e 100%);
             width: 100%;
-            height: 100%;
+            min-height: calc(var(--dcg-vh, 1vh) * 100);
             overflow-x: hidden;
         }
 
@@ -43,7 +47,7 @@
             transform: none;
             width: 100%;
             max-width: none;
-            height: 100%;
+            height: calc(var(--dcg-vh, 1vh) * 100);
             max-height: none;
             border-radius: 18px;
             opacity: 1;
@@ -77,7 +81,8 @@
 
         body.dcg-standalone #dcg-chat-modal {
             max-width: 640px;
-            max-height: 90vh;
+            max-height: calc(var(--dcg-vh, 1vh) * 100 - 48px);
+            height: calc(var(--dcg-vh, 1vh) * 100 - 48px);
             border-radius: 24px;
         }
 
@@ -103,13 +108,36 @@
 
             body.dcg-standalone #dcg-chat-modal {
                 max-width: 100%;
-                max-height: 100vh;
+                max-height: calc(var(--dcg-vh, 1vh) * 100 - 24px);
+                height: calc(var(--dcg-vh, 1vh) * 100 - 24px);
                 border-radius: 18px;
             }
 
             body.dcg-standalone .dcg-modal-header,
             body.dcg-standalone .dcg-input-container {
                 border-radius: 18px;
+            }
+        }
+
+        @supports (height: 100dvh) {
+            body.sidebar-mode {
+                min-height: 100dvh;
+            }
+
+            body.sidebar-mode #dcg-chat-modal {
+                height: 100dvh;
+            }
+
+            body.dcg-standalone #dcg-chat-modal {
+                max-height: calc(100dvh - 48px);
+                height: calc(100dvh - 48px);
+            }
+
+            @media (max-width: 768px) {
+                body.dcg-standalone #dcg-chat-modal {
+                    max-height: calc(100dvh - 24px);
+                    height: calc(100dvh - 24px);
+                }
             }
         }
 
@@ -1130,6 +1158,7 @@
     </div>
 
     <script>
+        const rootElement = document.documentElement;
         let isModalOpen = false;
         let messages = [];
         let isTyping = false;
@@ -1157,11 +1186,16 @@
         const mobileMedia = window.matchMedia('(max-width: 768px)');
         let isMobileView = mobileMedia.matches;
         const bottomBarEl = document.getElementById('dcg-bottom-bar');
+        const backdropEl = document.getElementById('dcg-backdrop');
         const mobileToggle = document.getElementById('dcgMobileChatToggle');
         const mobileSheet = document.getElementById('dcgMobileQuickSheet');
         const mobileSheetButtons = mobileSheet ? Array.from(mobileSheet.querySelectorAll('[data-mobile-action]')) : [];
         const mobileOpenChatBtn = mobileSheet ? mobileSheet.querySelector('[data-mobile-open]') : null;
         const mobileSheetClose = mobileSheet ? mobileSheet.querySelector('.dcg-mobile-quick-sheet__close') : null;
+
+        if (navigator.virtualKeyboard && 'overlaysContent' in navigator.virtualKeyboard) {
+            navigator.virtualKeyboard.overlaysContent = true;
+        }
 
         if (isSidebarMode || isStandaloneLaunch) {
             document.body.classList.add('sidebar-mode');
@@ -1169,6 +1203,20 @@
 
         if (isStandaloneLaunch) {
             document.body.classList.add('dcg-standalone');
+        }
+
+        function updateViewportUnit() {
+            const viewport = window.visualViewport;
+            const height = viewport ? viewport.height : window.innerHeight;
+            if (!height) return;
+            rootElement.style.setProperty('--dcg-vh', `${height * 0.01}px`);
+        }
+
+        updateViewportUnit();
+        window.addEventListener('resize', updateViewportUnit);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateViewportUnit);
+            window.visualViewport.addEventListener('scroll', updateViewportUnit);
         }
 
         function escapeHtml(value) {
@@ -1204,6 +1252,56 @@
                 applyMobileLayout(isMobileView);
             });
         }
+
+        function dismissActiveInput(event) {
+            if (!event) return;
+            const target = event.target;
+            if (target && (target.closest('.dcg-input-wrapper') || target.closest('.dcg-contact-form'))) {
+                return;
+            }
+
+            const activeElement = document.activeElement;
+            if (!activeElement) return;
+
+            const isChatInput = activeElement.id === 'chatInput';
+            const isFormField = activeElement.classList && activeElement.classList.contains('dcg-form-field');
+            const isTextInput = activeElement.matches && activeElement.matches('input, textarea');
+
+            if (!isChatInput && !isFormField && !isTextInput) return;
+
+            requestAnimationFrame(() => {
+                if (document.activeElement !== activeElement) {
+                    return;
+                }
+                activeElement.blur();
+                if (navigator.virtualKeyboard && typeof navigator.virtualKeyboard.hide === 'function') {
+                    try {
+                        navigator.virtualKeyboard.hide();
+                    } catch (error) {
+                        // ignore errors from unsupported browsers
+                    }
+                }
+            });
+        }
+
+        const dismissAreas = [
+            document.getElementById('messagesContainer'),
+            document.getElementById('dcg-chat-modal'),
+            backdropEl
+        ];
+
+        const dismissalEvents = [
+            { type: 'pointerdown', options: { passive: true } },
+            { type: 'touchstart', options: { passive: true } },
+            { type: 'mousedown', options: false }
+        ];
+
+        dismissAreas.forEach((area) => {
+            if (!area) return;
+            dismissalEvents.forEach(({ type, options }) => {
+                area.addEventListener(type, dismissActiveInput, options);
+            });
+        });
 
         function showMobileBubble() {
             if (mobileToggle) {
