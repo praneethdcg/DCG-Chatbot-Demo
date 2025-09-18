@@ -118,7 +118,6 @@
         }
 
         body.sidebar-mode .dcg-landing-wrapper,
-        body.dcg-direct .dcg-landing-wrapper,
         body.dcg-embedded .dcg-landing-wrapper {
             display: none;
         }
@@ -185,17 +184,6 @@
                 height: 100dvh;
             }
 
-            body.dcg-standalone #dcg-chat-modal {
-                max-height: calc(100dvh - 48px);
-                height: calc(100dvh - 48px);
-            }
-
-            @media (max-width: 768px) {
-                body.dcg-standalone #dcg-chat-modal {
-                    max-height: calc(100dvh - 24px);
-                    height: calc(100dvh - 24px);
-                }
-            }
         }
 
         .dcg-mobile-chat-toggle {

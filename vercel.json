@@ -4,6 +4,22 @@
   "framework": null,
   "rewrites": [
     {
+      "source": "/dcg-teddy.html",
+      "destination": "/dcg-teddy.html"
+    },
+    {
+      "source": "/dcg-savings-workshop.html",
+      "destination": "/dcg-savings-workshop.html"
+    },
+    {
+      "source": "/dcg-teddy",
+      "destination": "/dcg-teddy.html"
+    },
+    {
+      "source": "/dcg-savings-workshop",
+      "destination": "/dcg-savings-workshop.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
