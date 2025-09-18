@@ -493,6 +493,23 @@
             cursor: pointer;
         }
 
+        .dcg-chat-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 47, 46, 0.35);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 9998;
+        }
+
+        .dcg-chat-backdrop.dcg-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         .dcg-confetti-piece {
             position: absolute;
             width: 10px;
@@ -665,14 +682,18 @@
             <h2>Quick help</h2>
             <p>Pick a topic or type your own question.</p>
             <div class="dcg-quick-actions-sheet__grid">
-                <button data-action="calculator">Refresh Calculator</button>
+                <button data-open-chat="true">Open chat window</button>
+                <button data-action="calculator">Refresh calculator</button>
                 <button data-action="qualify">Do I qualify?</button>
                 <button data-action="sales">Talk to a specialist</button>
                 <button data-action="help">How DCG helps</button>
+                <button data-action="end-session">End chat session</button>
             </div>
             <button class="dcg-quick-actions-sheet__close" type="button">Close</button>
         </div>
     </div>
+
+    <div id="dcgChatBackdrop" class="dcg-chat-backdrop" aria-hidden="true"></div>
 
     <script>
         const compactMedia = window.matchMedia('(max-width: 960px)');
@@ -683,6 +704,8 @@
         const quickSheet = document.getElementById('dcgQuickActionsSheet');
         const quickSheetClose = quickSheet ? quickSheet.querySelector('.dcg-quick-actions-sheet__close') : null;
         const quickSheetButtons = quickSheet ? Array.from(quickSheet.querySelectorAll('[data-action]')) : [];
+        const quickSheetOpenButton = quickSheet ? quickSheet.querySelector('[data-open-chat]') : null;
+        const chatBackdrop = document.getElementById('dcgChatBackdrop');
 
         const assistantState = (() => {
             try {
@@ -716,6 +739,106 @@
             }
         }
 
+        let isChatVisible = false;
+        let isQuickSheetVisible = false;
+
+        function setChatBackdrop(mode) {
+            if (!chatBackdrop) return;
+
+            if (!isCompact || !mode) {
+                chatBackdrop.classList.remove('dcg-visible');
+                chatBackdrop.setAttribute('aria-hidden', 'true');
+                delete chatBackdrop.dataset.mode;
+                return;
+            }
+
+            chatBackdrop.dataset.mode = mode;
+            chatBackdrop.classList.add('dcg-visible');
+            chatBackdrop.setAttribute('aria-hidden', 'false');
+        }
+
+        function openQuickSheet() {
+            if (!quickSheet || !isCompact) return;
+            quickSheet.classList.add('dcg-open');
+            quickSheet.setAttribute('aria-hidden', 'false');
+            isQuickSheetVisible = true;
+            setChatBackdrop('sheet');
+            if (chatToggle) {
+                chatToggle.classList.add('dcg-open');
+                chatToggle.setAttribute('aria-label', 'Close quick actions');
+            }
+        }
+
+        function closeQuickSheet() {
+            if (!quickSheet) return;
+            quickSheet.classList.remove('dcg-open');
+            quickSheet.setAttribute('aria-hidden', 'true');
+            isQuickSheetVisible = false;
+
+            if (!isChatVisible) {
+                setChatBackdrop(null);
+                if (chatToggle) {
+                    chatToggle.classList.remove('dcg-open');
+                    chatToggle.setAttribute('aria-label', 'Open chat');
+                }
+            } else {
+                setChatBackdrop('chat');
+                if (chatToggle) {
+                    chatToggle.classList.add('dcg-open');
+                    chatToggle.setAttribute('aria-label', 'Close chat');
+                }
+            }
+        }
+
+        function showMobileChat({ fromAutoReveal = false } = {}) {
+            if (!sidebarFrame) return;
+            sidebarFrame.style.display = 'block';
+            isChatVisible = true;
+            closeQuickSheet();
+
+            if (chatToggle) {
+                chatToggle.style.display = 'flex';
+                chatToggle.classList.add('dcg-open');
+                chatToggle.setAttribute('aria-label', 'Close chat');
+            }
+
+            if (isCompact) {
+                setChatBackdrop('chat');
+            } else {
+                setChatBackdrop(null);
+            }
+
+            if (!fromAutoReveal) {
+                revealChatOnCompact = false;
+                markAssistantAutoOpenHandled();
+            }
+        }
+
+        function hideMobileChat() {
+            if (!sidebarFrame) return;
+            sidebarFrame.style.display = 'none';
+            isChatVisible = false;
+
+            if (chatToggle) {
+                chatToggle.style.display = 'flex';
+                chatToggle.classList.remove('dcg-open');
+                chatToggle.setAttribute('aria-label', 'Open chat');
+            }
+
+            if (isQuickSheetVisible) {
+                setChatBackdrop('sheet');
+                if (chatToggle) {
+                    chatToggle.classList.add('dcg-open');
+                    chatToggle.setAttribute('aria-label', 'Close quick actions');
+                }
+            } else {
+                setChatBackdrop(null);
+            }
+
+            revealChatOnCompact = false;
+            markAssistantAutoOpenHandled();
+        }
+
         function applySidebarLayout(compact) {
             if (!sidebarFrame) return;
             if (compact) {
@@ -725,17 +848,23 @@
                 sidebarFrame.style.height = 'min(80vh, 560px)';
                 sidebarFrame.style.bottom = '24px';
                 sidebarFrame.style.borderRadius = '20px';
-                const shouldReveal = revealChatOnCompact;
-                sidebarFrame.style.display = shouldReveal ? 'block' : 'none';
+                sidebarFrame.style.display = isChatVisible ? 'block' : 'none';
+
+                const shouldHighlightToggle = isChatVisible || isQuickSheetVisible;
                 if (chatToggle) {
-                    chatToggle.style.display = shouldReveal ? 'none' : 'flex';
-                    chatToggle.classList.toggle('dcg-open', shouldReveal);
+                    chatToggle.style.display = 'flex';
+                    chatToggle.classList.toggle('dcg-open', shouldHighlightToggle);
+                    chatToggle.setAttribute('aria-label', isChatVisible ? 'Close chat' : 'Open chat');
                 }
-                if (quickSheet) {
-                    quickSheet.classList.remove('dcg-open');
-                    quickSheet.setAttribute('aria-hidden', 'true');
+
+                if (!isChatVisible && !isQuickSheetVisible) {
+                    setChatBackdrop(null);
+                } else {
+                    setChatBackdrop(isChatVisible ? 'chat' : 'sheet');
                 }
-                if (shouldReveal) {
+
+                if (revealChatOnCompact) {
+                    showMobileChat({ fromAutoReveal: true });
                     revealChatOnCompact = false;
                     markAssistantAutoOpenHandled();
                 }
@@ -747,14 +876,19 @@
                 sidebarFrame.style.bottom = '32px';
                 sidebarFrame.style.borderRadius = '22px';
                 sidebarFrame.style.display = 'block';
+
+                isChatVisible = true;
+                isQuickSheetVisible = false;
+
                 if (chatToggle) {
                     chatToggle.style.display = 'none';
                     chatToggle.classList.remove('dcg-open');
+                    chatToggle.setAttribute('aria-label', 'Open chat');
                 }
-                if (quickSheet) {
-                    quickSheet.classList.remove('dcg-open');
-                    quickSheet.setAttribute('aria-hidden', 'true');
-                }
+
+                setChatBackdrop(null);
+                closeQuickSheet();
+
                 if (assistantState && assistantState.shouldAutoOpen) {
                     markAssistantAutoOpenHandled();
                 }
@@ -771,43 +905,41 @@
 
         if (chatToggle) {
             chatToggle.addEventListener('click', () => {
-                const isVisible = sidebarFrame.style.display === 'block';
-                if (isVisible) {
+                if (isChatVisible) {
                     hideMobileChat();
+                    return;
+                }
+
+                if (isQuickSheetVisible) {
+                    closeQuickSheet();
                 } else {
-                    showMobileChat();
+                    openQuickSheet();
                 }
             });
         }
 
-        function showMobileChat() {
-            if (!sidebarFrame) return;
-            sidebarFrame.style.display = 'block';
-            if (chatToggle) {
-                chatToggle.classList.add('dcg-open');
-                chatToggle.style.display = 'none';
-            }
-            if (quickSheet) {
-                quickSheet.classList.add('dcg-open');
-                quickSheet.setAttribute('aria-hidden', 'false');
-            }
-        }
-
-        function hideMobileChat() {
-            if (!sidebarFrame) return;
-            sidebarFrame.style.display = 'none';
-            if (chatToggle) {
-                chatToggle.classList.remove('dcg-open');
-                chatToggle.style.display = 'flex';
-            }
-            if (quickSheet) {
-                quickSheet.classList.remove('dcg-open');
-                quickSheet.setAttribute('aria-hidden', 'true');
-            }
-        }
-
         if (quickSheetClose) {
-            quickSheetClose.addEventListener('click', hideMobileChat);
+            quickSheetClose.addEventListener('click', () => {
+                closeQuickSheet();
+            });
+        }
+
+        if (quickSheetOpenButton) {
+            quickSheetOpenButton.addEventListener('click', () => {
+                closeQuickSheet();
+                showMobileChat();
+            });
+        }
+
+        if (chatBackdrop) {
+            chatBackdrop.addEventListener('pointerdown', () => {
+                if (!isCompact) return;
+                if (isQuickSheetVisible) {
+                    closeQuickSheet();
+                } else if (isChatVisible) {
+                    hideMobileChat();
+                }
+            });
         }
 
         function sendQuickAction(action) {
@@ -823,17 +955,25 @@
             button.addEventListener('click', () => {
                 const action = button.getAttribute('data-action');
                 if (!action) return;
+
+                closeQuickSheet();
+
                 if (action === 'calculator') {
                     window.location.href = 'dcg-savings-workshop.html';
                     return;
                 }
+
                 showMobileChat();
                 sendQuickAction(action);
-                if (isCompact && quickSheet) {
-                    quickSheet.classList.remove('dcg-open');
-                    quickSheet.setAttribute('aria-hidden', 'true');
-                }
             });
+        });
+
+        window.addEventListener('message', (event) => {
+            if (!event || !event.data) return;
+            if (event.data.type === 'DCG_CLOSE_SIDEBAR') {
+                hideMobileChat();
+                closeQuickSheet();
+            }
         });
         const lenderRowsEl = document.getElementById('dcg-lender-rows');
         const addRowBtn = document.getElementById('dcg-add-lender');

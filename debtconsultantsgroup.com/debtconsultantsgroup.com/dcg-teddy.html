@@ -1095,6 +1095,7 @@
                 <button data-mobile-action="sales">Talk to a specialist</button>
                 <button data-mobile-action="help">How DCG helps</button>
                 <button data-mobile-open="true">Open chat window</button>
+                <button data-mobile-action="end-session">End chat session</button>
             </div>
             <button type="button" class="dcg-mobile-quick-sheet__close">Close</button>
         </div>
@@ -1163,16 +1164,22 @@
         let messages = [];
         let isTyping = false;
         let isProcessing = false; // Prevent race conditions
-        let conversationContext = {
-            hasAskedAboutQualification: false,
-            hasAskedAboutSavings: false,
-            hasProvidedContact: false,
-            awaitingCalculatorAccess: false,
-            contactDetails: null,
-            userIntent: null
-        };
+        function createDefaultContext() {
+            return {
+                hasAskedAboutQualification: false,
+                hasAskedAboutSavings: false,
+                hasProvidedContact: false,
+                awaitingCalculatorAccess: false,
+                contactDetails: null,
+                userIntent: null,
+                awaitingEndConfirmation: false
+            };
+        }
+
+        let conversationContext = createDefaultContext();
         let hasShownBar = false;
         let isRestoring = false;
+        let isSessionResetPending = false;
 
         // Persistent configuration
         const MAX_MESSAGES = 100;
@@ -1481,6 +1488,17 @@
             if (isModalOpen) return;
 
             isModalOpen = true;
+
+            if (isSessionResetPending) {
+                const container = document.getElementById('messagesContainer');
+                messages = [];
+                conversationContext = createDefaultContext();
+                if (container) {
+                    container.innerHTML = '';
+                }
+                isSessionResetPending = false;
+            }
+
             if (!isSidebarMode && isMobileView) {
                 hideMobileSheet();
                 hideMobileBubble();
@@ -1552,12 +1570,7 @@
         // Restart conversation
         function restartConversation() {
             messages = [];
-            conversationContext = {
-                hasAskedAboutQualification: false,
-                hasAskedAboutSavings: false,
-                hasProvidedContact: false,
-                userIntent: null
-            };
+            conversationContext = createDefaultContext();
             document.getElementById('messagesContainer').innerHTML = '';
 
             try {
@@ -1712,6 +1725,89 @@
             window.location.href = targetUrl;
         }
 
+        function promptEndSession() {
+            if (conversationContext.awaitingEndConfirmation) {
+                return;
+            }
+
+            conversationContext.awaitingEndConfirmation = true;
+
+            addMessage('bot', `
+                <div>
+                    <p><strong>Ready to wrap up?</strong></p>
+                    <p>If you end the session, I'll clear this conversation and you can start fresh anytime.</p>
+                    <div class="dcg-inline-actions" style="margin-top: 12px;">
+                        <button class="dcg-inline-action" onclick="handleInlineAction('confirm-end')">
+                            ✅ Yes, end session
+                        </button>
+                        <button class="dcg-inline-action" onclick="handleInlineAction('cancel-end')">
+                            ↩️ Keep chatting
+                        </button>
+                    </div>
+                </div>
+            `, true);
+        }
+
+        function completeEndSession() {
+            conversationContext.awaitingEndConfirmation = false;
+            conversationContext = createDefaultContext();
+            isSessionResetPending = true;
+            isModalOpen = false;
+
+            addMessage('bot', `
+                <div>
+                    <p><strong>Session closed.</strong></p>
+                    <p>I'm here whenever you need help again.</p>
+                </div>
+            `, true);
+
+            messages = [];
+
+            try {
+                sessionStorage.removeItem(CHAT_STORAGE_KEY);
+            } catch (error) {
+                console.warn('Unable to clear chat storage', error);
+            }
+
+            hasShownBar = false;
+
+            setTimeout(() => {
+                if (isSidebarMode) {
+                    try {
+                        window.parent.postMessage({ type: 'DCG_CLOSE_SIDEBAR' }, '*');
+                    } catch (error) {
+                        console.warn('Unable to notify parent about sidebar close', error);
+                    }
+                } else {
+                    const modal = document.getElementById('dcg-chat-modal');
+                    if (modal && modal.classList.contains('active')) {
+                        minimizeChat();
+                    } else if (typeof showMobileBubble === 'function') {
+                        showMobileBubble();
+                    }
+                }
+
+                const container = document.getElementById('messagesContainer');
+                if (container) {
+                    container.innerHTML = '';
+                }
+            }, 400);
+        }
+
+        function cancelEndSession() {
+            if (!conversationContext.awaitingEndConfirmation) {
+                return;
+            }
+
+            conversationContext.awaitingEndConfirmation = false;
+
+            addMessage('bot', `
+                <div>
+                    <p>Got it — I'll stay right here if you need anything else.</p>
+                </div>
+            `, true);
+        }
+
         // Handle inline action buttons
         function handleInlineAction(action) {
             // Prevent race conditions
@@ -1745,6 +1841,15 @@
                     break;
                 case 'calculator':
                     message = 'Show me the savings calculator';
+                    break;
+                case 'end-session':
+                    message = 'Please end this session';
+                    break;
+                case 'confirm-end':
+                    message = 'Yes, please end the session';
+                    break;
+                case 'cancel-end':
+                    message = 'No, keep the chat open';
                     break;
             }
 
@@ -1906,6 +2011,30 @@
                 isProcessing = false; // Reset processing flag
 
                 const lower = message.toLowerCase();
+                const normalized = lower.replace(/\s+/g, ' ').trim();
+
+                if (conversationContext.awaitingEndConfirmation) {
+                    if (/(^|\b)(yes|yep|yeah|sure|confirm|end|close)(\b|$)/.test(normalized)) {
+                        completeEndSession();
+                        return;
+                    }
+
+                    if (/(^|\b)(no|nope|not yet|keep|stay)(\b|$)/.test(normalized)) {
+                        cancelEndSession();
+                        return;
+                    }
+                }
+
+                const wantsToEnd = /(end|close|finish|cancel|stop)\s+(the\s+)?(chat|conversation|session)/.test(normalized)
+                    || /^bye\b/.test(normalized)
+                    || normalized === 'goodbye'
+                    || normalized === 'exit'
+                    || normalized === 'quit';
+
+                if (wantsToEnd) {
+                    promptEndSession();
+                    return;
+                }
 
                 // Handle context-aware responses
                 if (lower.includes('struggling') || lower.includes('difficult') || lower.includes('hard')) {
