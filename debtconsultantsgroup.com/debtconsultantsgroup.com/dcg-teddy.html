@@ -2257,7 +2257,7 @@
 
             try {
                 const controller = new AbortController();
-                timeoutId = setTimeout(() => controller.abort(), 10000);
+                timeoutId = setTimeout(() => controller.abort(), 25000);
 
                 const { hostname, port } = window.location;
                 const endpointCandidates = [];
@@ -2369,7 +2369,7 @@
             } catch (error) {
                 const timedOut = error.name === 'AbortError';
                 const userMessage = timedOut
-                    ? 'The request timed out before we could confirm your details. Please try again in a few seconds.'
+                    ? 'The request is taking longer than expected, but we likely received your details. If you do not hear from us soon, please try again or let us know.'
                     : 'We were unable to save your information just now. Please retry, or we can connect you with a specialist shortly.';
 
                 console.error('Salesforce lead submission failed', {
