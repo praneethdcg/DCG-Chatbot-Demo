@@ -415,6 +415,21 @@
             background: linear-gradient(135deg, #134E4A, #042F2E);
         }
 
+        .dcg-chat-toggle.dcg-notification {
+            animation: dcgTogglePulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes dcgTogglePulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 16px 32px rgba(20, 184, 166, 0.28);
+            }
+            50% {
+                transform: scale(1.08);
+                box-shadow: 0 20px 40px rgba(20, 184, 166, 0.36);
+            }
+        }
+
         .dcg-quick-actions-sheet {
             position: fixed;
             left: 0;
@@ -688,6 +703,7 @@
                 <button data-action="sales">Talk to a specialist</button>
                 <button data-action="help">How DCG helps</button>
                 <button data-action="end-session">End chat session</button>
+                <button data-action="minimize">Minimize chat</button>
             </div>
             <button class="dcg-quick-actions-sheet__close" type="button">Close</button>
         </div>
@@ -742,6 +758,22 @@
         let isChatVisible = false;
         let isQuickSheetVisible = false;
 
+        function markChatNotification() {
+            if (!isCompact || !chatToggle) return;
+            chatToggle.classList.add('dcg-notification');
+            chatToggle.setAttribute('aria-label', 'Open chat (new message)');
+        }
+
+        function clearChatNotification() {
+            if (!chatToggle) return;
+            chatToggle.classList.remove('dcg-notification');
+            if (isCompact) {
+                chatToggle.setAttribute('aria-label', isChatVisible ? 'Close chat' : 'Open chat');
+            } else {
+                chatToggle.setAttribute('aria-label', 'Open chat');
+            }
+        }
+
         function setChatBackdrop(mode) {
             if (!chatBackdrop) return;
 
@@ -764,9 +796,11 @@
             isQuickSheetVisible = true;
             setChatBackdrop('sheet');
             if (chatToggle) {
+                chatToggle.style.display = 'flex';
                 chatToggle.classList.add('dcg-open');
                 chatToggle.setAttribute('aria-label', 'Close quick actions');
             }
+            clearChatNotification();
         }
 
         function closeQuickSheet() {
@@ -797,9 +831,9 @@
             closeQuickSheet();
 
             if (chatToggle) {
-                chatToggle.style.display = 'flex';
-                chatToggle.classList.add('dcg-open');
-                chatToggle.setAttribute('aria-label', 'Close chat');
+                chatToggle.style.display = 'none';
+                chatToggle.classList.remove('dcg-open');
+                chatToggle.setAttribute('aria-label', 'Open chat');
             }
 
             if (isCompact) {
@@ -807,6 +841,8 @@
             } else {
                 setChatBackdrop(null);
             }
+
+            clearChatNotification();
 
             if (!fromAutoReveal) {
                 revealChatOnCompact = false;
@@ -837,6 +873,7 @@
 
             revealChatOnCompact = false;
             markAssistantAutoOpenHandled();
+            clearChatNotification();
         }
 
         function applySidebarLayout(compact) {
@@ -864,7 +901,9 @@
                 }
 
                 if (revealChatOnCompact) {
-                    showMobileChat({ fromAutoReveal: true });
+                    if (!isChatVisible) {
+                        markChatNotification();
+                    }
                     revealChatOnCompact = false;
                     markAssistantAutoOpenHandled();
                 }
@@ -888,6 +927,7 @@
 
                 setChatBackdrop(null);
                 closeQuickSheet();
+                clearChatNotification();
 
                 if (assistantState && assistantState.shouldAutoOpen) {
                     markAssistantAutoOpenHandled();
@@ -905,6 +945,8 @@
 
         if (chatToggle) {
             chatToggle.addEventListener('click', () => {
+                clearChatNotification();
+
                 if (isChatVisible) {
                     hideMobileChat();
                     return;
@@ -934,6 +976,7 @@
         if (chatBackdrop) {
             chatBackdrop.addEventListener('pointerdown', () => {
                 if (!isCompact) return;
+                clearChatNotification();
                 if (isQuickSheetVisible) {
                     closeQuickSheet();
                 } else if (isChatVisible) {
@@ -955,6 +998,12 @@
             button.addEventListener('click', () => {
                 const action = button.getAttribute('data-action');
                 if (!action) return;
+
+                if (action === 'minimize') {
+                    hideMobileChat();
+                    closeQuickSheet();
+                    return;
+                }
 
                 closeQuickSheet();
 
@@ -1255,17 +1304,14 @@
         });
 
         interestButton.addEventListener('click', () => {
-            if (isCompact && sidebarFrame && sidebarFrame.style.display !== 'block') {
-                sidebarFrame.style.display = 'block';
-                if (chatToggle) {
-                    chatToggle.classList.add('dcg-open');
-                }
-            }
             try {
                 const frame = document.getElementById('dcgAllyFrameSidebar');
                 frame.contentWindow.postMessage({ type: 'DCG_INTEREST' }, '*');
                 interestButton.textContent = "Thank you! We'll be in touch";
                 interestButton.disabled = true;
+                if (isCompact && !isChatVisible) {
+                    markChatNotification();
+                }
             } catch (error) {
                 console.warn('Unable to notify assistant', error);
             }

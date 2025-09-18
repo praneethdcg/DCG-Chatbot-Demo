@@ -1382,13 +1382,18 @@
             if (!event || !event.data) return;
 
             if (event.data.type === 'DCG_INTEREST') {
-                openChat();
+                const shouldAutoOpen = !mobileMedia.matches;
+                if (shouldAutoOpen) {
+                    openChat();
+                }
+
+                const interestMessage = 'Connect me with a specialist about these savings';
+                const delay = shouldAutoOpen ? 200 : 0;
 
                 setTimeout(() => {
-                    const interestMessage = 'Connect me with a specialist about these savings';
                     addMessage('user', interestMessage);
                     processUserMessage(interestMessage);
-                }, 200);
+                }, delay);
             }
 
             if (event.data.type === 'DCG_QUICK_ACTION') {
@@ -1842,9 +1847,12 @@
                 case 'calculator':
                     message = 'Show me the savings calculator';
                     break;
-                case 'end-session':
-                    message = 'Please end this session';
+                case 'interest':
+                    message = "I'm interested in these savings";
                     break;
+                case 'end-session':
+                    promptEndSession();
+                    return;
                 case 'confirm-end':
                     message = 'Yes, please end the session';
                     break;
@@ -2133,15 +2141,18 @@
                             • Debt-free in <strong>24-48 months</strong><br><br>
 
                             <div style="background: #10B981; color: white; padding: 12px; border-radius: 8px;">
-                                <strong>Next Step:</strong> Get your free consultation to see exact savings
+                                <strong>Next Step:</strong> Tap “I'm interested in these savings” on the calculator page to lock in your review.
                             </div>
 
                             <div class="dcg-inline-actions" style="margin-top: 12px;">
-                                <button class="dcg-inline-action" onclick="handleInlineAction('sales')">
-                                    Get Free Consultation
+                                <button class="dcg-inline-action" onclick="handleInlineAction('interest')">
+                                    I'm interested in these savings
                                 </button>
                                 <button class="dcg-inline-action" onclick="handleInlineAction('calculator')">
                                     Try Calculator First
+                                </button>
+                                <button class="dcg-inline-action" onclick="handleInlineAction('sales')">
+                                    Talk to a specialist
                                 </button>
                             </div>
                         </div>
@@ -2228,6 +2239,19 @@
                     lower.trim() === 'connect me with a specialist about these savings'
                 ) {
                     addMessage('bot', 'Thank you for your interest, someone from our team will contact you in the next couple of hours.');
+                } else if (
+                    lower.includes("interested in these savings") ||
+                    lower.includes("i'm interested in these savings") ||
+                    normalized === "im interested" ||
+                    normalized === "i'm interested"
+                ) {
+                    addMessage('bot', `
+                        <div>
+                            <p><strong>Perfect — I’ll flag that you want a savings review.</strong></p>
+                            <p style="margin-top: 8px;">Tap “I'm interested in these savings” on the calculator page so our team gets notified right away, and drop your best contact below so we can schedule the review.</p>
+                        </div>
+                    `, true);
+                    showContactForm();
                 } else if (
                     lower.includes('sales') ||
                     lower.includes('specialist') ||
