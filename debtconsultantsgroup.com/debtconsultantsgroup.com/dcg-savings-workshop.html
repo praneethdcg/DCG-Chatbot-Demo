@@ -17,11 +17,11 @@
             const mediaQuery = window.matchMedia('(max-width: 768px)');
             const apply = (mq) => {
                 if (mq.matches) {
-                    document.documentElement.classList.add('dcg-mobile');
+                    document.documentElement.ocumentElement.classList.add('dcg-mobile');
                     document.body && document.body.classList.add('dcg-mobile');
                     loadStyle('styles/dcg-savings-mobile.css');
                 } else {
-                    document.documentElement.classList.remove('dcg-mobile');
+                    document.documentElement.ocumentElement.classList.remove('dcg-mobile');
                     document.body && document.body.classList.remove('dcg-mobile');
                     loadStyle('styles/dcg-savings-desktop.css');
                 }
