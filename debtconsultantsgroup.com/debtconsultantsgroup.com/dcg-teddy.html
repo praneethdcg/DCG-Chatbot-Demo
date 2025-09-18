@@ -17,6 +17,11 @@
             color: #0B3C3E;
         }
 
+        #scrollUp,
+        #scrollUp i {
+            display: none !important;
+        }
+
         :root {
             --dcg-vh: 1vh;
         }
@@ -119,12 +124,9 @@
             color: #134E4A;
         }
 
-        body.sidebar-mode .dcg-landing-hero,
-        body.sidebar-mode .dcg-landing-main,
-        body.dcg-standalone .dcg-landing-hero,
-        body.dcg-standalone .dcg-landing-main,
-        body.dcg-embedded .dcg-landing-hero,
-        body.dcg-embedded .dcg-landing-main {
+        body.sidebar-mode .dcg-landing-wrapper,
+        body.dcg-direct .dcg-landing-wrapper,
+        body.dcg-embedded .dcg-landing-wrapper {
             display: none;
         }
 
@@ -147,22 +149,22 @@
         }
 
         body.sidebar-mode #dcg-chat-modal {
-            position: fixed;
-            inset: auto 16px 14vh;
-            width: auto;
             max-width: 420px;
             margin: 0 auto;
-            transform: translate(-50%, -50%);
-            left: 50%;
-            top: unset;
-            bottom: 16vh;
-            height: min(520px, calc(var(--dcg-vh, 1vh) * 80));
-            max-height: min(560px, calc(var(--dcg-vh, 1vh) * 80));
-            border-radius: 24px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transform: none;
+            width: 100%;
+            max-width: none;
+            height: calc(var(--dcg-vh, 1vh) * 100);
+            max-height: none;
+            border-radius: 18px;
             opacity: 1;
             visibility: visible;
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+            overflow-x: hidden;
         }
 
         body.sidebar-mode #dcg-chat-modal.active {
@@ -179,56 +181,6 @@
 
         body.sidebar-mode .dcg-header-actions button:last-child {
             display: none;
-        }
-
-        body.dcg-standalone {
-            padding: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        body.dcg-standalone #dcg-chat-modal {
-            max-width: 520px;
-            height: min(560px, calc(var(--dcg-vh, 1vh) * 80));
-            max-height: min(560px, calc(var(--dcg-vh, 1vh) * 80));
-            border-radius: 24px;
-        }
-
-        body.dcg-standalone .dcg-modal-header,
-        body.dcg-standalone .dcg-input-container {
-            border-radius: 24px 24px 0 0;
-        }
-
-        body.dcg-standalone .dcg-input-container {
-            border-radius: 0 0 24px 24px;
-        }
-
-        body.dcg-standalone #dcg-bottom-bar,
-        body.dcg-standalone .dcg-mobile-chat-toggle,
-        body.dcg-standalone .dcg-mobile-quick-sheet {
-            display: none !important;
-        }
-
-        @media (max-width: 768px) {
-            body.dcg-standalone {
-                padding: 12px;
-            }
-
-            body.dcg-standalone #dcg-chat-modal {
-                width: calc(100% - 24px);
-                left: 50%;
-                transform: translate(-50%, 0);
-                bottom: 16px;
-                height: min(520px, calc(var(--dcg-vh, 1vh) * 78));
-                max-height: min(520px, calc(var(--dcg-vh, 1vh) * 78));
-                border-radius: 20px;
-            }
-
-            body.dcg-standalone .dcg-modal-header,
-            body.dcg-standalone .dcg-input-container {
-                border-radius: 20px;
-            }
         }
 
         @supports (height: 100dvh) {
@@ -1351,7 +1303,7 @@
         const isSidebarMode = urlParams.get('mode') === 'sidebar';
         const chatParam = (urlParams.get('chat') || '').toLowerCase();
         const shouldAutoOpenFromUrl = ['1', 'true', 'yes', 'open'].includes(chatParam);
-        const isStandaloneLaunch = shouldAutoOpenFromUrl && !isSidebarMode;
+        const isDirectLaunch = shouldAutoOpenFromUrl && !isSidebarMode;
         const mobileMedia = window.matchMedia('(max-width: 768px)');
         let isMobileView = mobileMedia.matches;
         const bottomBarEl = document.getElementById('dcg-bottom-bar');
@@ -1370,12 +1322,14 @@
             document.body.classList.add('dcg-landing');
         }
 
-        if (isSidebarMode || isStandaloneLaunch) {
-            document.body.classList.add('sidebar-mode');
+        if (isDirectLaunch) {
+            document.body.classList.remove('dcg-landing');
+            document.body.classList.remove('dcg-standalone');
+            document.body.classList.add('dcg-direct');
         }
 
-        if (isStandaloneLaunch) {
-            document.body.classList.add('dcg-standalone');
+        if (isSidebarMode) {
+            document.body.classList.add('sidebar-mode');
         }
 
         function updateViewportUnit() {
@@ -1402,7 +1356,7 @@
         }
 
         function applyMobileLayout(isMobile) {
-            if (isSidebarMode || isStandaloneLaunch) return;
+            if (isSidebarMode) return;
             if (isMobile) {
                 if (bottomBarEl) bottomBarEl.style.display = 'none';
                 if (mobileToggle) mobileToggle.style.display = 'flex';
@@ -2911,7 +2865,7 @@
 
         restoreConversation();
 
-        if (isStandaloneLaunch) {
+        if (isDirectLaunch) {
             setTimeout(() => {
                 if (!isModalOpen) {
                     openChat();
