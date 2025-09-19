@@ -2022,6 +2022,7 @@
                     miawEventSource = null;
                 }
 
+                // Note: routingKey is now passed as Last-Event-Id header by the backend, not as query param
                 const url = `/api/miaw?action=sse&accessToken=${encodeURIComponent(accessToken)}&routingKey=${encodeURIComponent(routingKey)}`;
                 const eventSource = new EventSource(url);
                 miawEventSource = eventSource;

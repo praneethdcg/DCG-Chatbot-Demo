@@ -724,6 +724,15 @@ async function handleSse(req, res, requestId) {
       }
     }
 
+    console.error(`[${requestId}] SSE upstream error:`, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      details,
+      url: sseUrl.toString(),
+      hasLastEventId: !!routingKey,
+      lastEventId: routingKey ? maskValue(routingKey) : null
+    });
+
     return res.status(upstream.status).json({
       success: false,
       error: 'Salesforce SSE endpoint rejected the request.',
@@ -732,10 +741,14 @@ async function handleSse(req, res, requestId) {
       diagnostics: {
         timestamp: new Date().toISOString(),
         upstreamStatus: upstream.status,
+        lastEventIdProvided: !!routingKey,
+        url: sseUrl.toString(),
         suggestion: upstream.status === 401
           ? 'Access token is invalid or expired'
           : upstream.status === 403
           ? 'Check OrgId and permissions'
+          : upstream.status === 400
+          ? 'Check Last-Event-Id format or SSE configuration'
           : 'Verify SSE endpoint configuration'
       }
     });
