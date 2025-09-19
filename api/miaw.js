@@ -28,7 +28,7 @@ const allowedOrigins = [
   'http://localhost:3000'
 ];
 
-const DEFAULT_CAPABILITIES_VERSION = process.env.SALESFORCE_CAPABILITIES_VERSION || '60';
+const DEFAULT_CAPABILITIES_VERSION = process.env.SALESFORCE_CAPABILITIES_VERSION || '1';
 const DEFAULT_PLATFORM = process.env.SALESFORCE_MIAW_PLATFORM || 'Web';
 
 function applyCorsHeaders(res, origin) {
