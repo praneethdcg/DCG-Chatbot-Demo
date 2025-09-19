@@ -2,6 +2,11 @@
   "buildCommand": "echo 'No build required'",
   "outputDirectory": "debtconsultantsgroup.com/debtconsultantsgroup.com",
   "framework": null,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
       "source": "/dcg-teddy.html",
