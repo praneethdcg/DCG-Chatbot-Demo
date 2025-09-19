@@ -680,9 +680,11 @@ async function handleSse(req, res, requestId) {
     };
 
     // Add Last-Event-Id header if routingKey is provided
-    if (routingKey) {
-      headers['Last-Event-Id'] = routingKey;
-    }
+    // NOTE: Commenting out for now as it's causing 400 errors
+    // The lastEventId might not be the correct value for Last-Event-Id header
+    // if (routingKey) {
+    //   headers['Last-Event-Id'] = routingKey;
+    // }
 
     console.log(`[${requestId}] Connecting to SSE with headers:`, {
       hasLastEventId: !!routingKey,
