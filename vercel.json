@@ -1,32 +1,34 @@
 {
   "buildCommand": "echo 'No build required'",
-  "outputDirectory": "debtconsultantsgroup.com/debtconsultantsgroup.com",
   "framework": null,
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 60
-    }
-  },
   "rewrites": [
     {
       "source": "/dcg-teddy.html",
-      "destination": "/dcg-teddy.html"
+      "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/dcg-teddy.html"
     },
     {
       "source": "/dcg-savings-workshop.html",
-      "destination": "/dcg-savings-workshop.html"
+      "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/dcg-savings-workshop.html"
     },
     {
       "source": "/dcg-teddy",
-      "destination": "/dcg-teddy.html"
+      "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/dcg-teddy.html"
     },
     {
       "source": "/dcg-savings-workshop",
-      "destination": "/dcg-savings-workshop.html"
+      "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/dcg-savings-workshop.html"
+    },
+    {
+      "source": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
+      "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/$1"
+    },
+    {
+      "source": "/",
+      "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/index.html"
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/$1"
     }
   ],
   "headers": [
