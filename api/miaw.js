@@ -332,7 +332,7 @@ async function handleCreateSession(body, res, rateLimitRemaining, requestId) {
       timestamp: new Date().toISOString(),
       accessToken: maskValue(data?.accessToken),
       expiresIn: data?.expiresIn,
-      responseTime: Date.now() - startTime
+      responseTime: 0
     });
 
     const expiresIn = typeof data?.expiresIn === 'number' ? data.expiresIn : null;
@@ -447,7 +447,7 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
       requestId,
       timestamp: new Date().toISOString(),
       conversationId: upstreamConversationId ? maskValue(upstreamConversationId) : null,
-      responseTime: Date.now() - startTime
+      responseTime: 0
     });
 
     return res.status(200).json({
@@ -590,7 +590,7 @@ async function handleSendMessage(body, res, rateLimitRemaining, requestId) {
       timestamp: new Date().toISOString(),
       clientMessageId: clientMessageId ? maskValue(clientMessageId) : null,
       messageType: resolvedMessageType,
-      responseTime: Date.now() - startTime
+      responseTime: 0
     });
 
     return res.status(200).json({
