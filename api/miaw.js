@@ -1,13 +1,14 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { Readable } from 'stream';
-import crypto from 'crypto';
 
 let ratelimit = null;
 
 // Generate unique request IDs for tracking
 function generateRequestId() {
-  return `req_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+  // Use Math.random for ID generation to avoid crypto module issues in Vercel
+  const randomHex = Math.random().toString(16).substring(2, 10);
+  return `req_${Date.now()}_${randomHex}`;
 }
 
 // Sanitize headers for logging (remove sensitive data)

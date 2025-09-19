@@ -1682,7 +1682,7 @@
             let payload = {};
 
             try {
-                response = await fetch('/api/miaw.js?action=createSession', {
+                response = await fetch('/api/miaw?action=createSession', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ context })
@@ -1767,7 +1767,7 @@
             let payload = {};
 
             try {
-                response = await fetch('/api/miaw.js?action=createConversation', {
+                response = await fetch('/api/miaw?action=createConversation', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(bodyPayload)
@@ -2020,7 +2020,7 @@
                     miawEventSource = null;
                 }
 
-                const url = `/api/miaw.js?action=sse&accessToken=${encodeURIComponent(accessToken)}&routingKey=${encodeURIComponent(routingKey)}`;
+                const url = `/api/miaw?action=sse&accessToken=${encodeURIComponent(accessToken)}&routingKey=${encodeURIComponent(routingKey)}`;
                 const eventSource = new EventSource(url);
                 miawEventSource = eventSource;
 
@@ -2172,7 +2172,7 @@
             let payload = {};
 
             try {
-                response = await fetch('/api/miaw.js?action=sendMessage', {
+                response = await fetch('/api/miaw?action=sendMessage', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(bodyPayload)
