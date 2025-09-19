@@ -542,7 +542,8 @@ export default async function handler(req, res) {
     action,
     method: req.method,
     hasBody: !!req.body,
-    bodyType: typeof req.body
+    bodyType: typeof req.body,
+    timestamp: new Date().toISOString()
   });
 
   if (!action) {
