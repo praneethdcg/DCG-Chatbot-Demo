@@ -666,9 +666,6 @@ async function handleSse(req, res, requestId) {
   const scrtUrl = getBaseScrtUrl();
   const sseUrl = new URL(`${scrtUrl}/eventrouter/v1/sse`);
 
-  // Add orgId as query parameter - SSE endpoint requires it
-  sseUrl.searchParams.set('orgId', process.env.SALESFORCE_ORG_ID);
-
   // Note: According to Salesforce docs, routingKey should be passed as Last-Event-Id header
   // not as a query parameter
 
@@ -678,7 +675,9 @@ async function handleSse(req, res, requestId) {
     const headers = {
       'Accept': 'text/event-stream',
       'Authorization': `Bearer ${accessToken}`,
-      'Cache-Control': 'no-cache'
+      'Cache-Control': 'no-cache',
+      // Add X-Org-Id header as required by SSE endpoint
+      'X-Org-Id': process.env.SALESFORCE_ORG_ID
     };
 
     // Add Last-Event-Id header if routingKey is provided
@@ -691,7 +690,8 @@ async function handleSse(req, res, requestId) {
     console.log(`[${requestId}] Connecting to SSE with headers:`, {
       hasLastEventId: !!routingKey,
       lastEventId: routingKey ? maskValue(routingKey) : null,
-      url: sseUrl.toString()
+      url: sseUrl.toString(),
+      orgId: maskValue(process.env.SALESFORCE_ORG_ID)
     });
 
     upstream = await fetch(sseUrl, {
