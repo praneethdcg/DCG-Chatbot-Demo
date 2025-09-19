@@ -5,30 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>DCG Assistant - AI-Powered Debt Relief</title>
     <link rel="stylesheet" href="styles/dcg-teddy-base.css">
-    <script type='text/javascript'>
-    function initEmbeddedMessaging() {
-        try {
-            embeddedservice_bootstrap.settings.language = 'en_US';
-            embeddedservice_bootstrap.init(
-                '00DOy00000K9djN',
-                'QRMCA_Chatbot_Deployment',
-                'https://dmpbalance--uat.sandbox.my.site.com/ESWQRMCAChatbotDeployme1758232683684',
-                {
-                    scrt2URL: 'https://dmpbalance--uat.sandbox.my.salesforce-scrt.com'
-                }
-            );
-        } catch (err) {
-            console.error('Error loading Embedded Messaging: ', err);
-        }
-    };
-    </script>
-    <script type='text/javascript' src='https://dmpbalance--uat.sandbox.my.site.com/ESWQRMCAChatbotDeployme1758232683684/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
-    <script>
-      window.addEventListener('onEmbeddedMessagingReady', function() {
-        window.isMIAWReady = true;
-        console.log('Salesforce MIAW is ready');
-      });
-    </script>
 </head>
 <body>
     <script>
@@ -201,10 +177,23 @@
                 </div>
                 <div class="dcg-header-info">
                     <h2>DCG Assistant</h2>
-                    <p>Your Debt Relief Specialist</p>
+                    <p id="dcgAssistantStatus">Your Debt Relief Specialist</p>
+                    <div class="dcg-live-agent-status" id="dcgLiveAgentStatus" aria-live="polite" hidden>
+                        <span class="dcg-live-agent-dot" aria-hidden="true"></span>
+                        <span id="dcgLiveAgentStatusText">Assistant online</span>
+                        <span id="dcgLiveAgentTyping" hidden>• Agent is typing…</span>
+                        <button type="button" class="dcg-retry-agent-btn" id="dcgRetryAgentButton" hidden>
+                            Retry
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="dcg-header-actions">
+                <button class="dcg-header-btn dcg-end-agent-btn" id="dcgEndAgentChatButton" type="button" hidden disabled title="End live agent chat">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.59 13.41L14 15l-2-2-2 2-1.59-1.59L10 11l-2-2 1.59-1.59L12 10l2.41-2.41L16 9l-2 2 2 2-1.41 1.41z"/>
+                    </svg>
+                </button>
                 <button class="dcg-header-btn" onclick="restartConversation()" title="Restart Conversation">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
@@ -219,12 +208,19 @@
         </div>
 
         <!-- Messages -->
-        <div class="dcg-messages-container" id="messagesContainer">
-            <!-- Messages will be added here -->
+        <div class="dcg-live-chat-region">
+            <div class="dcg-messages-container" id="messagesContainer">
+                <!-- Messages will be added here -->
+            </div>
+            <div id="dcgSalesforceChatContainer" class="dcg-salesforce-chat" aria-hidden="true"></div>
         </div>
 
         <!-- Input -->
         <div class="dcg-input-container">
+            <div class="dcg-agent-connection-banner" id="dcgAgentConnectionBanner" aria-live="polite" hidden>
+                <span id="dcgAgentConnectionText">Talking to a live agent</span>
+                <button type="button" class="dcg-agent-banner-end" id="dcgAgentBannerEndButton" hidden>End Live Chat</button>
+            </div>
             <form class="dcg-input-wrapper" onsubmit="sendMessage(event)">
                 <input
                     type="text"
@@ -269,12 +265,279 @@
         let isRestoring = false;
         let isSessionResetPending = false;
 
+        const MIAW_SESSION_KEY = 'dcgMiawState';
+        const MIAW_INITIAL_BACKOFF_MS = 1200;
+        const MIAW_MAX_BACKOFF_MS = 30000;
+        const MIAW_MAX_SSE_RETRIES = 5;
+        const MIAW_TYPING_TIMEOUT_MS = 12000;
+        const MIAW_REFRESH_BUFFER_MS = 120000;
+        const AGENT_DEFAULT_NAME = 'DCG Specialist';
+        const AGENT_INDICATOR_LABEL = 'Live Agent';
+        const MIAW_CONNECTION_STATES = Object.freeze({
+            IDLE: 'idle',
+            CONNECTING: 'connecting',
+            CONNECTED: 'connected',
+            DISCONNECTED: 'disconnected',
+            ERROR: 'error'
+        });
+
+        let miawSession = null;
+        let miawConversation = null;
+        let miawEventSource = null;
+        let miawSessionExpiryTimer = null;
+        let agentTypingTimer = null;
+        let miawRetryCount = 0;
+        let miawBackoffDelay = MIAW_INITIAL_BACKOFF_MS;
+        let isAgentConnected = false;
+        let isConnectingToAgent = false;
+        let isAgentTyping = false;
+        let miawConnectionState = MIAW_CONNECTION_STATES.IDLE;
+        let agentMetadata = {
+            name: null,
+            id: null,
+            routingKey: null,
+            lastMessageAt: null
+        };
+        let pendingAgentMessages = [];
+        let hasPendingAgentNotification = false;
+
+        const assistantStatusEl = document.getElementById('dcgAssistantStatus');
+        const liveAgentStatusEl = document.getElementById('dcgLiveAgentStatus');
+        const liveAgentStatusTextEl = document.getElementById('dcgLiveAgentStatusText');
+        const liveAgentTypingEl = document.getElementById('dcgLiveAgentTyping');
+        const endAgentChatButton = document.getElementById('dcgEndAgentChatButton');
+        const agentConnectionBanner = document.getElementById('dcgAgentConnectionBanner');
+        const agentConnectionTextEl = document.getElementById('dcgAgentConnectionText');
+        const agentBannerEndButton = document.getElementById('dcgAgentBannerEndButton');
+        const retryAgentButton = document.getElementById('dcgRetryAgentButton');
+
+        const AGENT_AVATAR_HTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-3 0-8 1.5-8 4v2h16v-2c0-2.5-5-4-8-4z" />
+            </svg>
+        `;
+
+        (function injectAgentStyles() {
+            if (document.getElementById('dcgAgentStyles')) {
+                return;
+            }
+
+            const style = document.createElement('style');
+            style.id = 'dcgAgentStyles';
+            style.textContent = `
+                .dcg-message.agent .dcg-msg-avatar {
+                    background: #0f172a;
+                    color: #f8fafc;
+                }
+
+                .dcg-message.agent .dcg-msg-bubble {
+                    background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+                    color: #f8fafc;
+                    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.35);
+                }
+
+                .dcg-agent-badge-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .dcg-message.agent .dcg-msg-bubble .dcg-agent-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    letter-spacing: 0.02em;
+                    background: rgba(94, 234, 212, 0.16);
+                    color: #5eead4;
+                    padding: 4px 10px;
+                    border-radius: 999px;
+                    text-transform: uppercase;
+                    margin-bottom: 10px;
+                }
+
+                .dcg-message.agent .dcg-agent-timestamp {
+                    margin-left: auto;
+                    font-size: 12px;
+                    color: rgba(248, 250, 252, 0.72);
+                }
+
+                .dcg-agent-body {
+                    white-space: pre-line;
+                    line-height: 1.5;
+                }
+
+                .dcg-message.agent .dcg-agent-content {
+                    display: grid;
+                    gap: 10px;
+                }
+
+                .dcg-agent-message-attachments {
+                    display: grid;
+                    gap: 10px;
+                }
+
+                .dcg-agent-attachment {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px 12px;
+                    border-radius: 12px;
+                    background: rgba(148, 163, 184, 0.18);
+                    color: inherit;
+                    text-decoration: none;
+                    transition: background 0.2s ease;
+                }
+
+                .dcg-agent-attachment:hover,
+                .dcg-agent-attachment:focus {
+                    background: rgba(148, 163, 184, 0.28);
+                }
+
+                .dcg-live-agent-status {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: rgba(20, 184, 166, 0.16);
+                    border-radius: 999px;
+                    padding: 4px 10px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #0f172a;
+                }
+
+                .dcg-live-agent-status[hidden] {
+                    display: none !important;
+                }
+
+                .dcg-live-agent-dot {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: #14b8a6;
+                    box-shadow: 0 0 0 rgba(20, 184, 166, 0.45);
+                    animation: dcg-agent-pulse 1.8s ease-in-out infinite;
+                }
+
+                @keyframes dcg-agent-pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.35); }
+                    50% { transform: scale(1.2); box-shadow: 0 0 0 6px rgba(20, 184, 166, 0); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+                }
+
+                .dcg-retry-agent-btn {
+                    margin-left: auto;
+                    background: none;
+                    border: 1px solid rgba(15, 23, 42, 0.12);
+                    border-radius: 999px;
+                    padding: 2px 10px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #0f172a;
+                    cursor: pointer;
+                }
+
+                .dcg-retry-agent-btn[hidden] {
+                    display: none !important;
+                }
+
+                .dcg-agent-connection-banner {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    background: rgba(20, 184, 166, 0.14);
+                    color: #0f172a;
+                    border-radius: 14px;
+                    padding: 10px 16px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+
+                .dcg-agent-connection-banner[hidden] {
+                    display: none !important;
+                }
+
+                .dcg-agent-banner-end {
+                    background: rgba(15, 23, 42, 0.06);
+                    border: 1px solid rgba(15, 23, 42, 0.2);
+                    border-radius: 10px;
+                    padding: 6px 12px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #0f172a;
+                    cursor: pointer;
+                }
+
+                .dcg-agent-banner-end[hidden] {
+                    display: none !important;
+                }
+
+                .dcg-agent-status-error {
+                    background: rgba(248, 113, 113, 0.18) !important;
+                    color: #7f1d1d !important;
+                }
+
+                .dcg-agent-status-warning {
+                    background: rgba(245, 158, 11, 0.18) !important;
+                    color: #78350f !important;
+                }
+
+                .dcg-end-agent-btn[hidden] {
+                    display: none !important;
+                }
+
+                .dcg-agent-connection-banner button:hover,
+                .dcg-agent-connection-banner button:focus {
+                    background: rgba(15, 23, 42, 0.12);
+                }
+
+                .dcg-agent-message-footer {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    font-size: 12px;
+                    opacity: 0.74;
+                    margin-top: 6px;
+                }
+
+                .dcg-input-container.dcg-agent-active .dcg-chat-input {
+                    border-color: rgba(20, 184, 166, 0.65);
+                    box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.12);
+                }
+
+                .dcg-input-container.dcg-agent-active .dcg-send-button {
+                    background: #14b8a6;
+                }
+
+                .dcg-chat-input-container.dcg-agent-active {
+                    border: 1px solid rgba(20, 184, 166, 0.24);
+                    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.12);
+                    border-radius: 18px;
+                }
+            `;
+
+            document.head.appendChild(style);
+        })();
+
+        if (endAgentChatButton) {
+            endAgentChatButton.addEventListener('click', () => disconnectFromAgent({ userInitiated: true }));
+        }
+
+        if (agentBannerEndButton) {
+            agentBannerEndButton.addEventListener('click', () => disconnectFromAgent({ userInitiated: true }));
+        }
+
+        if (retryAgentButton) {
+            retryAgentButton.addEventListener('click', () => retryAgentConnection());
+        }
+
         // Persistent configuration
         const MAX_MESSAGES = 100;
         const CHAT_STORAGE_KEY = 'dcgAssistantSession';
         const SAVINGS_PAGE = 'dcg-savings-workshop.html';
         const SALES_PHONE = { raw: '8446113328', display: '(844) 611-3328' };
-        let isMIAWReady = window.isMIAWReady === true;
         const urlParams = new URLSearchParams(window.location.search);
         const isSidebarMode = urlParams.get('mode') === 'sidebar';
         const isEmbedded = window.self !== window.top;
@@ -290,8 +553,145 @@
         const mobileSheetButtons = mobileSheet ? Array.from(mobileSheet.querySelectorAll('[data-mobile-action]')) : [];
         const mobileOpenChatBtn = mobileSheet ? mobileSheet.querySelector('[data-mobile-open]') : null;
         const mobileSheetClose = mobileSheet ? mobileSheet.querySelector('.dcg-mobile-quick-sheet__close') : null;
+        const chatInputContainer = document.querySelector('.dcg-input-container');
+        const chatInputEl = document.getElementById('chatInput');
+        const bottomInputEl = document.getElementById('bottomInput');
+        const bottomInputContainer = document.querySelector('#dcg-bottom-bar .dcg-chat-input-container');
+        const defaultModalPlaceholder = chatInputEl ? chatInputEl.getAttribute('placeholder') : '';
+        const defaultBottomPlaceholder = bottomInputEl ? bottomInputEl.getAttribute('placeholder') : '';
 
-        if (navigator.virtualKeyboard && 'overlaysContent' in navigator.virtualKeyboard) {
+        function updateAgentUi(state, opts = {}) {
+            const {
+                typing = false,
+                error = null,
+                agentName = null,
+                bannerMessage = null,
+                statusText = null
+            } = opts;
+
+            let header = '';
+
+            if (state === MIAW_CONNECTION_STATES.CONNECTED) {
+                header = agentName ? `Connected to ${agentName}` : 'Connected to Live Agent';
+            } else if (state === MIAW_CONNECTION_STATES.CONNECTING) {
+                header = statusText || 'Connecting to Live Agent…';
+            } else if (state === MIAW_CONNECTION_STATES.ERROR) {
+                header = error || 'Live agent connection issue';
+            } else {
+                header = 'Your Debt Relief Specialist';
+            }
+
+            if (assistantStatusEl) {
+                assistantStatusEl.textContent = header || 'Your Debt Relief Specialist';
+            }
+
+            if (liveAgentStatusEl) {
+                liveAgentStatusEl.hidden = !(state === MIAW_CONNECTION_STATES.CONNECTED ||
+                                           state === MIAW_CONNECTION_STATES.CONNECTING ||
+                                           state === MIAW_CONNECTION_STATES.ERROR);
+
+                if (state === MIAW_CONNECTION_STATES.ERROR) {
+                    liveAgentStatusEl.classList.add('dcg-agent-status-error');
+                } else {
+                    liveAgentStatusEl.classList.remove('dcg-agent-status-error');
+                }
+            }
+
+            if (liveAgentStatusTextEl) {
+                if (state === MIAW_CONNECTION_STATES.CONNECTED) {
+                    liveAgentStatusTextEl.textContent = agentName ? `${agentName} online` : 'Agent online';
+                } else if (state === MIAW_CONNECTION_STATES.CONNECTING) {
+                    liveAgentStatusTextEl.textContent = statusText || 'Connecting…';
+                } else if (state === MIAW_CONNECTION_STATES.ERROR) {
+                    liveAgentStatusTextEl.textContent = 'Connection error';
+                } else {
+                    liveAgentStatusTextEl.textContent = 'Assistant online';
+                }
+            }
+
+            if (liveAgentTypingEl) {
+                liveAgentTypingEl.hidden = !typing;
+            }
+
+            if (retryAgentButton) {
+                retryAgentButton.hidden = state !== MIAW_CONNECTION_STATES.ERROR;
+            }
+
+            if (agentConnectionBanner) {
+                agentConnectionBanner.hidden = !(state === MIAW_CONNECTION_STATES.CONNECTED ||
+                                               state === MIAW_CONNECTION_STATES.CONNECTING ||
+                                               state === MIAW_CONNECTION_STATES.ERROR);
+
+                if (state === MIAW_CONNECTION_STATES.ERROR) {
+                    agentConnectionBanner.classList.add('dcg-agent-status-error');
+                } else {
+                    agentConnectionBanner.classList.remove('dcg-agent-status-error');
+                }
+            }
+
+            if (agentConnectionTextEl) {
+                if (state === MIAW_CONNECTION_STATES.CONNECTED) {
+                    agentConnectionTextEl.textContent = bannerMessage ||
+                        (agentName ? `Talking to ${agentName}` : 'Talking to a live agent');
+                } else if (state === MIAW_CONNECTION_STATES.CONNECTING) {
+                    agentConnectionTextEl.textContent = statusText || 'Connecting to live agent…';
+                } else if (state === MIAW_CONNECTION_STATES.ERROR) {
+                    agentConnectionTextEl.textContent = error || 'Live agent connection issue';
+                }
+            }
+
+            if (agentBannerEndButton) {
+                agentBannerEndButton.hidden = state !== MIAW_CONNECTION_STATES.CONNECTED;
+            }
+
+            if (endAgentChatButton) {
+                endAgentChatButton.hidden = state !== MIAW_CONNECTION_STATES.CONNECTED;
+                endAgentChatButton.disabled = state !== MIAW_CONNECTION_STATES.CONNECTED;
+            }
+
+            const modalInputContainer = document.querySelector('.dcg-input-container');
+            const bottomBarInputContainer = document.querySelector('.dcg-chat-input-container');
+
+            if (modalInputContainer) {
+                if (state === MIAW_CONNECTION_STATES.CONNECTED) {
+                    modalInputContainer.classList.add('dcg-agent-active');
+                } else {
+                    modalInputContainer.classList.remove('dcg-agent-active');
+                }
+            }
+
+            if (bottomBarInputContainer) {
+                if (state === MIAW_CONNECTION_STATES.CONNECTED) {
+                    bottomBarInputContainer.classList.add('dcg-agent-active');
+                } else {
+                    bottomBarInputContainer.classList.remove('dcg-agent-active');
+                }
+            }
+
+            if (chatInputEl) {
+                if (state === MIAW_CONNECTION_STATES.CONNECTED) {
+                    chatInputEl.placeholder = 'You are chatting with a DCG specialist…';
+                } else {
+                    chatInputEl.placeholder = defaultModalPlaceholder;
+                }
+            }
+
+            if (bottomInputEl) {
+                if (state === MIAW_CONNECTION_STATES.CONNECTED) {
+                    bottomInputEl.placeholder = 'You are chatting with a DCG specialist…';
+                } else {
+                    bottomInputEl.placeholder = defaultBottomPlaceholder;
+                }
+            }
+
+            if (typeof persistMiawState === 'function') {
+                persistMiawState();
+            }
+        }
+
+        updateAgentUi(miawConnectionState);
+
+        if (window === window.top && navigator.virtualKeyboard && 'overlaysContent' in navigator.virtualKeyboard) {
             navigator.virtualKeyboard.overlaysContent = true;
         }
 
@@ -483,7 +883,7 @@
 
                 setTimeout(() => {
                     addMessage('user', interestMessage);
-                    processUserMessage(interestMessage);
+                    routeUserMessage(interestMessage);
                 }, delay);
             }
 
@@ -540,13 +940,46 @@
 
             if (message) {
                 openChat();
+                input.value = '';
                 setTimeout(() => {
                     addMessage('user', message);
-                    processUserMessage(message);
-                    input.value = '';
-                }, 500);
+                    if (isAgentConnected === true) {
+                        sendMessageToAgent(message).catch((error) => {
+                            console.warn('Unable to deliver message to live agent', error);
+                        });
+                    } else {
+                        routeUserMessage(message);
+                    }
+                }, 400);
             }
         }
+
+        function routeUserMessage(message) {
+            if (!message) {
+                return;
+            }
+
+            if (isAgentConnected) {
+                sendMessageToAgent(message).catch((error) => {
+                    console.error('Unable to deliver message to live agent', error);
+                });
+                return;
+            }
+
+            if (isConnectingToAgent && !isAgentConnected) {
+                pendingAgentMessages.push(message);
+
+                if (!hasPendingAgentNotification) {
+                    addMessage('bot', `I'll pass that along as soon as we finish connecting you to a specialist.`, false);
+                    hasPendingAgentNotification = true;
+                }
+
+                return;
+            }
+
+            processUserMessage(message);
+        }
+
 
         // Open chat with specific action
         function openChatWithAction(action) {
@@ -574,7 +1007,7 @@
 
                 if (message) {
                     addMessage('user', message);
-                    processUserMessage(message);
+                    routeUserMessage(message);
                 }
             }, 500);
         }
@@ -703,7 +1136,12 @@
                 }
 
                 const state = {
-                    messages,
+                    messages: messages.map((message) => ({
+                        type: message.type,
+                        content: message.content,
+                        isHTML: !!message.isHTML,
+                        meta: message.meta ? { ...message.meta } : null
+                    })),
                     conversationContext,
                     hasShownBar,
                     isModalOpen,
@@ -760,7 +1198,8 @@
                 isRestoring = true;
                 savedState.messages.forEach(message => {
                     if (message && message.type && typeof message.content !== 'undefined') {
-                        addMessage(message.type, message.content, !!message.isHTML);
+                        const meta = message.meta ? { ...message.meta } : {};
+                        addMessage(message.type, message.content, !!message.isHTML, meta);
                     }
                 });
                 isRestoring = false;
@@ -785,6 +1224,7 @@
                 }
 
                 persistConversation({ shouldAutoOpen: false });
+
             } catch (error) {
                 console.warn('Unable to restore chat state', error);
                 if (isSidebarMode) {
@@ -964,7 +1404,7 @@
 
             if (message) {
                 addMessage('user', message);
-                processUserMessage(message);
+                routeUserMessage(message);
             }
         }
 
@@ -978,30 +1418,1009 @@
 
             addMessage('user', message);
             input.value = '';
+            if (isAgentConnected === true) {
+                sendMessageToAgent(message).catch((error) => {
+                    console.warn('Unable to deliver message to live agent', error);
+                });
+            } else {
+                routeUserMessage(message);
+            }
+        }
 
-            processUserMessage(message);
+        function formatAgentTimestamp(timestamp) {
+            try {
+                const date = timestamp ? new Date(timestamp) : new Date();
+                if (Number.isNaN(date.getTime())) {
+                    return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                }
+                return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            } catch (error) {
+                return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            }
+        }
+
+        function renderAgentAttachments(attachments) {
+            if (!Array.isArray(attachments) || attachments.length === 0) {
+                return '';
+            }
+
+            return attachments
+                .filter((attachment) => attachment && typeof attachment === 'object')
+                .map((attachment) => {
+                    const label = escapeHtml(attachment.label || attachment.name || 'Download');
+                    const rawUrl = typeof attachment.url === 'string' ? attachment.url : '';
+                    const isHttp = /^https?:\/\//i.test(rawUrl);
+                    const url = isHttp ? rawUrl : '';
+                    const icon = attachment.contentType && /pdf/i.test(attachment.contentType)
+                        ? '📄'
+                        : '📎';
+
+                    if (!url) {
+                        return '';
+                    }
+
+                    return `<a class="dcg-agent-attachment" href="${url}" target="_blank" rel="noopener noreferrer">${icon} ${label}</a>`;
+                })
+                .filter(Boolean)
+                .join('');
+        }
+
+        function generateClientMessageId() {
+            return `dcg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        }
+
+        function stripHtml(value) {
+            if (!value) {
+                return '';
+            }
+
+            return String(value)
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function getLastUserMessage() {
+            for (let index = messages.length - 1; index >= 0; index -= 1) {
+                const entry = messages[index];
+                if (!entry || entry.type !== 'user') {
+                    continue;
+                }
+
+                if (entry.isHTML) {
+                    return stripHtml(entry.content);
+                }
+
+                return String(entry.content || '').trim();
+            }
+
+            return '';
+        }
+
+        function getStoredUtmParameters() {
+            if (typeof sessionStorage === 'undefined') {
+                return null;
+            }
+
+            try {
+                const raw = sessionStorage.getItem('dcgUtmParameters');
+                if (!raw) {
+                    return null;
+                }
+
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : null;
+            } catch (error) {
+                console.warn('Unable to parse stored UTM parameters', error);
+                return null;
+            }
+        }
+
+        function buildMiawContext(overrides = {}) {
+            const context = {
+                originUrl: window.location.href,
+                hasProvidedContact: !!conversationContext.hasProvidedContact,
+                userIntent: conversationContext.userIntent || null,
+                lastUserMessage: getLastUserMessage() || null,
+                contact: conversationContext.contactDetails || null,
+                utm: getStoredUtmParameters(),
+                timestamp: Date.now(),
+                ...overrides
+            };
+
+            Object.keys(context).forEach((key) => {
+                const value = context[key];
+                const isEmptyString = typeof value === 'string' && !value.trim();
+                if (value === null || typeof value === 'undefined' || isEmptyString) {
+                    delete context[key];
+                }
+            });
+
+            return context;
+        }
+
+        function buildInitialAgentMessage() {
+            const lines = ['Visitor requested a live agent through the DCG chatbot.'];
+            const contact = conversationContext.contactDetails;
+
+            if (contact && typeof contact === 'object') {
+                const parts = [];
+                if (contact.name) parts.push(`Name: ${contact.name}`);
+                if (contact.businessName) parts.push(`Business: ${contact.businessName}`);
+                if (contact.phone) parts.push(`Phone: ${contact.phone}`);
+                if (contact.email) parts.push(`Email: ${contact.email}`);
+                if (parts.length) {
+                    lines.push(`Contact details → ${parts.join(' | ')}`);
+                }
+            }
+
+            const lastUserMessage = getLastUserMessage();
+            if (lastUserMessage) {
+                lines.push(`Most recent user message: "${lastUserMessage}"`);
+            }
+
+            if (conversationContext.awaitingCalculatorAccess) {
+                lines.push('User requested access to the savings calculator.');
+            }
+
+            lines.push(`Page URL: ${window.location.href}`);
+
+            return lines.join('\n');
+        }
+
+        function buildMiawConversationMetadata() {
+            const metadata = {
+                intent: conversationContext.userIntent || null,
+                contactProvided: !!conversationContext.hasProvidedContact,
+                pageUrl: window.location.href,
+                contact: conversationContext.contactDetails || null
+            };
+
+            Object.keys(metadata).forEach((key) => {
+                const value = metadata[key];
+                const isEmptyString = typeof value === 'string' && !value.trim();
+                if (value === null || typeof value === 'undefined' || isEmptyString) {
+                    delete metadata[key];
+                }
+            });
+
+            return metadata;
+        }
+
+        function isSessionValid(session) {
+            if (!session || !session.accessToken) {
+                return false;
+            }
+
+            if (!session.expiresAt) {
+                return true;
+            }
+
+            return (session.expiresAt - Date.now()) > (MIAW_REFRESH_BUFFER_MS / 2);
+        }
+
+        function scheduleSessionRefresh(expiresAt) {
+            if (miawSessionExpiryTimer) {
+                clearTimeout(miawSessionExpiryTimer);
+                miawSessionExpiryTimer = null;
+            }
+
+            if (!expiresAt) {
+                return;
+            }
+
+            const now = Date.now();
+            const refreshDelay = Math.max(10000, (expiresAt - now) - MIAW_REFRESH_BUFFER_MS);
+
+            if (refreshDelay <= 0) {
+                refreshMiawSessionIfNeeded({ force: true }).catch((error) => {
+                    console.warn('Unable to refresh MIAW session', error);
+                });
+                return;
+            }
+
+            miawSessionExpiryTimer = setTimeout(() => {
+                refreshMiawSessionIfNeeded({ force: true }).catch((error) => {
+                    console.warn('Unable to refresh MIAW session', error);
+                });
+            }, refreshDelay);
+        }
+
+        function persistMiawState() {
+            if (typeof sessionStorage === 'undefined') {
+                return;
+            }
+
+            try {
+                const payload = {
+                    session: miawSession,
+                    conversation: miawConversation,
+                    agentMetadata,
+                    isAgentConnected,
+                    isConnectingToAgent,
+                    miawConnectionState
+                };
+
+                sessionStorage.setItem(MIAW_SESSION_KEY, JSON.stringify(payload));
+            } catch (error) {
+                console.warn('Unable to persist MIAW state', error);
+            }
+        }
+
+        function clearMiawState() {
+            if (miawSessionExpiryTimer) {
+                clearTimeout(miawSessionExpiryTimer);
+                miawSessionExpiryTimer = null;
+            }
+
+            miawSession = null;
+            miawConversation = null;
+            agentMetadata = {
+                name: null,
+                id: null,
+                routingKey: null,
+                lastMessageAt: null
+            };
+
+            try {
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.removeItem(MIAW_SESSION_KEY);
+                }
+            } catch (error) {
+                console.warn('Unable to clear stored MIAW state', error);
+            }
+        }
+
+        async function createMiawSession(context = {}, options = {}) {
+            const forceRefresh = options.forceRefresh === true;
+
+            if (!forceRefresh && isSessionValid(miawSession)) {
+                return miawSession;
+            }
+
+            let response;
+            let payload = {};
+
+            try {
+                response = await fetch('/api/miaw.js?action=createSession', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ context })
+                });
+
+                try {
+                    payload = await response.json();
+                } catch (parseError) {
+                    payload = {};
+                }
+
+                if (!response.ok || !payload || payload.success !== true) {
+                    const message = payload && payload.error
+                        ? payload.error
+                        : `Unable to create session (status ${response.status})`;
+                    const error = new Error(message);
+                    error.status = response.status;
+                    throw error;
+                }
+            } catch (error) {
+                console.error('createMiawSession error', error);
+                throw error;
+            }
+
+            const data = payload.data || {};
+            const accessToken = data.accessToken;
+
+            if (!accessToken) {
+                throw new Error('Missing access token from Salesforce session response.');
+            }
+
+            const expiresIn = typeof payload.expiresIn === 'number'
+                ? payload.expiresIn
+                : typeof data.expiresIn === 'number'
+                    ? data.expiresIn
+                    : null;
+
+            let issuedAt = data.issuedAt ?? payload.issuedAt ?? Date.now();
+            issuedAt = Number(issuedAt);
+            if (!Number.isFinite(issuedAt)) {
+                issuedAt = Date.now();
+            }
+
+            const ttlMs = typeof expiresIn === 'number' ? expiresIn * 1000 : 15 * 60 * 1000;
+            const expiresAt = issuedAt + ttlMs;
+
+            miawSession = {
+                accessToken,
+                expiresIn,
+                issuedAt,
+                expiresAt,
+                context
+            };
+
+            scheduleSessionRefresh(expiresAt);
+            persistMiawState();
+
+            return miawSession;
+        }
+
+        async function createMiawConversation(accessToken, metadata = {}, options = {}) {
+            if (!accessToken) {
+                throw new Error('Missing access token for conversation creation.');
+            }
+
+            const bodyPayload = { accessToken };
+
+            if (metadata && Object.keys(metadata).length) {
+                bodyPayload.metadata = metadata;
+            }
+
+            if (options.channelMetadata) {
+                bodyPayload.channelMetadata = options.channelMetadata;
+            }
+
+            let response;
+            let payload = {};
+
+            try {
+                response = await fetch('/api/miaw.js?action=createConversation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyPayload)
+                });
+
+                try {
+                    payload = await response.json();
+                } catch (parseError) {
+                    payload = {};
+                }
+            } catch (error) {
+                console.error('createMiawConversation network error', error);
+                throw error;
+            }
+
+            if (response && response.status === 401 && !options._retried) {
+                const context = (miawSession && miawSession.context) || buildMiawContext();
+                await createMiawSession(context, { forceRefresh: true });
+                const freshToken = miawSession ? miawSession.accessToken : null;
+                if (!freshToken) {
+                    throw new Error('Unable to refresh Salesforce session.');
+                }
+                return createMiawConversation(freshToken, metadata, { ...options, _retried: true });
+            }
+
+            if (!response || !response.ok || !payload || payload.success !== true) {
+                const message = payload && payload.error
+                    ? payload.error
+                    : `Failed to create conversation (status ${response ? response.status : 'unknown'})`;
+                const error = new Error(message);
+                error.status = response ? response.status : undefined;
+                throw error;
+            }
+
+            const data = payload.data || {};
+            const conversationId = data.conversationId || data.id || (data.conversation && data.conversation.id);
+            const routingKey = data.routingKey
+                || data.routingId
+                || data.eventRouterKey
+                || (data.event && (data.event.routingKey || data.event.routingId || data.event.eventKey));
+
+            if (!conversationId) {
+                throw new Error('Missing conversationId from Salesforce response.');
+            }
+
+            if (!routingKey) {
+                throw new Error('Missing routing key from Salesforce response.');
+            }
+
+            const agentName = data.agentName || data.agent?.name || agentMetadata.name;
+
+            miawConversation = {
+                conversationId,
+                routingKey,
+                metadata,
+                createdAt: Date.now(),
+                hasSentInitialMessage: false
+            };
+
+            agentMetadata.routingKey = routingKey;
+            if (agentName) {
+                agentMetadata.name = agentName;
+            }
+
+            persistMiawState();
+            return miawConversation;
+        }
+
+        async function refreshMiawSessionIfNeeded(options = {}) {
+            if (options.force === true) {
+                const context = (miawSession && miawSession.context) || buildMiawContext();
+                return createMiawSession(context, { forceRefresh: true });
+            }
+
+            if (isSessionValid(miawSession)) {
+                return miawSession;
+            }
+
+            const context = (miawSession && miawSession.context) || buildMiawContext();
+            return createMiawSession(context, { forceRefresh: true });
+        }
+
+        function showAgentTyping(agentName) {
+            if (typeof agentName === 'string' && agentName.trim()) {
+                agentMetadata.name = agentName.trim();
+            }
+
+            if (agentTypingTimer) {
+                clearTimeout(agentTypingTimer);
+            }
+
+            isAgentTyping = true;
+            updateAgentUi(miawConnectionState, { typing: true, agentName: agentMetadata.name });
+
+            agentTypingTimer = setTimeout(() => {
+                hideAgentTyping();
+            }, MIAW_TYPING_TIMEOUT_MS);
+        }
+
+        function hideAgentTyping() {
+            if (agentTypingTimer) {
+                clearTimeout(agentTypingTimer);
+                agentTypingTimer = null;
+            }
+
+            if (!isAgentTyping) {
+                return;
+            }
+
+            isAgentTyping = false;
+            updateAgentUi(miawConnectionState, { typing: false });
+        }
+
+        function handleAgentMessage(evtData) {
+            if (!evtData) {
+                return;
+            }
+
+            const payload = evtData.payload || evtData.data || evtData;
+            const messageNode = payload.message
+                || (Array.isArray(payload.messages) ? payload.messages[0] : null)
+                || payload;
+
+            const text = typeof messageNode?.text === 'string'
+                ? messageNode.text
+                : typeof payload.text === 'string'
+                    ? payload.text
+                    : '';
+
+            const attachments = Array.isArray(messageNode?.attachments)
+                ? messageNode.attachments
+                : Array.isArray(payload.attachments)
+                    ? payload.attachments
+                    : [];
+
+            const agentName = payload.agent?.name
+                || payload.sender?.name
+                || payload.agentName
+                || agentMetadata.name
+                || AGENT_DEFAULT_NAME;
+
+            const timestamp = messageNode?.createdDate
+                || messageNode?.createdAt
+                || payload.timestamp
+                || Date.now();
+
+            if (!text) {
+                return;
+            }
+
+            agentMetadata.name = agentName || agentMetadata.name;
+            agentMetadata.lastMessageAt = Date.now();
+
+            updateAgentUi(MIAW_CONNECTION_STATES.CONNECTED, { agentName });
+
+            addMessage('agent', text, false, {
+                agentName,
+                timestamp,
+                attachments: attachments && attachments.length ? attachments : undefined
+            });
+
+            hideAgentTyping();
+            persistMiawState();
+        }
+
+        function handleSsePayload(eventType, rawData) {
+            let data = rawData;
+
+            if (typeof rawData === 'string') {
+                const trimmed = rawData.trim();
+                if (trimmed) {
+                    try {
+                        data = JSON.parse(trimmed);
+                    } catch (error) {
+                        data = { raw: trimmed };
+                    }
+                } else {
+                    data = {};
+                }
+            }
+
+            const normalizedType = (data && (data.eventType || data.type || eventType || '')).toString().toLowerCase();
+
+            if (data && typeof data.typing === 'boolean') {
+                if (data.typing) {
+                    showAgentTyping(data.agent?.name || data.agentName || data.senderName);
+                } else {
+                    hideAgentTyping();
+                }
+                return;
+            }
+
+            switch (normalizedType) {
+                case 'typing':
+                case 'typingstarted':
+                case 'typing.start':
+                case 'typingstart':
+                case 'agenttyping':
+                    showAgentTyping(data?.agent?.name || data?.agentName || data?.senderName);
+                    return;
+                case 'typingstopped':
+                case 'typingended':
+                case 'typing.stop':
+                case 'typingend':
+                    hideAgentTyping();
+                    return;
+                case 'disconnect':
+                case 'conversationended':
+                case 'sessionended':
+                    disconnectFromAgent({ reason: normalizedType, silent: true, bannerMessage: 'Live chat ended by agent.' });
+                    return;
+                default:
+                    break;
+            }
+
+            handleAgentMessage(data);
+        }
+
+        async function flushPendingAgentMessages() {
+            if (!pendingAgentMessages.length) {
+                return;
+            }
+
+            const queued = [...pendingAgentMessages];
+            pendingAgentMessages = [];
+            hasPendingAgentNotification = false;
+
+            for (const pending of queued) {
+                try {
+                    await sendMessageToAgent(pending, { skipQueue: true });
+                } catch (error) {
+                    console.warn('Unable to send pending live agent message', error);
+                }
+            }
+        }
+
+        function establishSseConnection(accessToken, routingKey, options = {}) {
+            return new Promise((resolve, reject) => {
+                if (!accessToken || !routingKey) {
+                    reject(new Error('Missing credentials for live agent connection.'));
+                    return;
+                }
+
+                if (miawEventSource) {
+                    try {
+                        miawEventSource.close();
+                    } catch (error) {
+                        // ignore close errors
+                    }
+                    miawEventSource = null;
+                }
+
+                const url = `/api/miaw.js?action=sse&accessToken=${encodeURIComponent(accessToken)}&routingKey=${encodeURIComponent(routingKey)}`;
+                const eventSource = new EventSource(url);
+                miawEventSource = eventSource;
+
+                let hasResolved = false;
+
+                isConnectingToAgent = true;
+                isAgentConnected = false;
+                updateAgentUi(MIAW_CONNECTION_STATES.CONNECTING, { agentName: agentMetadata.name });
+
+                eventSource.onopen = () => {
+                    hasResolved = true;
+                    miawRetryCount = 0;
+                    miawBackoffDelay = MIAW_INITIAL_BACKOFF_MS;
+                    isAgentConnected = true;
+                    isConnectingToAgent = false;
+                    miawConnectionState = MIAW_CONNECTION_STATES.CONNECTED;
+                    updateAgentUi(miawConnectionState, { agentName: agentMetadata.name });
+                    hideAgentTyping();
+                    flushPendingAgentMessages();
+                    persistMiawState();
+                    resolve();
+                };
+
+                eventSource.onmessage = (event) => {
+                    handleSsePayload(event.type || 'message', event.data);
+                };
+
+                const additionalEvents = [
+                    'typing',
+                    'typingStarted',
+                    'typing.start',
+                    'typingStopped',
+                    'typing.stop',
+                    'agentMessage',
+                    'conversationMessage',
+                    'disconnect',
+                    'conversationEnded'
+                ];
+
+                additionalEvents.forEach((eventName) => {
+                    eventSource.addEventListener(eventName, (event) => {
+                        handleSsePayload(eventName, event.data);
+                    });
+                });
+
+                eventSource.onerror = (event) => {
+                    console.warn('MIAW SSE error', event);
+
+                    if (!hasResolved) {
+                        try {
+                            eventSource.close();
+                        } catch (closeError) {
+                            // ignore close errors
+                        }
+                        miawEventSource = null;
+                        isAgentConnected = false;
+                        isConnectingToAgent = false;
+                        miawConnectionState = MIAW_CONNECTION_STATES.ERROR;
+                        updateAgentUi(miawConnectionState, { error: 'Unable to connect to live agent. Please try again.' });
+                        reject(new Error('Unable to establish live agent connection.'));
+                        return;
+                    }
+
+                    if (miawEventSource) {
+                        try {
+                            miawEventSource.close();
+                        } catch (closeError) {
+                            // ignore close errors
+                        }
+                        miawEventSource = null;
+                    }
+
+                    isAgentConnected = false;
+
+                    if (options.skipRetry) {
+                        isConnectingToAgent = false;
+                        miawConnectionState = MIAW_CONNECTION_STATES.ERROR;
+                        updateAgentUi(miawConnectionState, { error: 'Live agent connection interrupted.' });
+                        persistMiawState();
+                        return;
+                    }
+
+                    if (miawRetryCount >= MIAW_MAX_SSE_RETRIES) {
+                        isConnectingToAgent = false;
+                        miawConnectionState = MIAW_CONNECTION_STATES.ERROR;
+                        updateAgentUi(miawConnectionState, { error: 'Live agent connection dropped. Please retry.' });
+                        persistMiawState();
+                        return;
+                    }
+
+                    miawRetryCount += 1;
+                    isConnectingToAgent = true;
+                    miawConnectionState = MIAW_CONNECTION_STATES.CONNECTING;
+
+                    const delay = Math.min(miawBackoffDelay, MIAW_MAX_BACKOFF_MS);
+                    miawBackoffDelay = Math.min(miawBackoffDelay * 2, MIAW_MAX_BACKOFF_MS);
+
+                    updateAgentUi(MIAW_CONNECTION_STATES.CONNECTING, {
+                        agentName: agentMetadata.name,
+                        statusText: `Reconnecting to live agent (attempt ${miawRetryCount + 1})…`
+                    });
+
+                    setTimeout(() => {
+                        if (!miawSession || !miawSession.accessToken || !miawConversation || !miawConversation.routingKey) {
+                            return;
+                        }
+                        establishSseConnection(miawSession.accessToken, miawConversation.routingKey).catch((error) => {
+                            console.warn('Reconnection attempt failed', error);
+                        });
+                    }, delay);
+                };
+            });
+        }
+
+        async function sendMessageToAgent(message, options = {}) {
+            const skipQueue = options.skipQueue === true;
+            const trimmed = typeof message === 'string' ? message.trim() : '';
+
+            if (!trimmed) {
+                return;
+            }
+
+            if (!miawConversation || !miawConversation.conversationId || !isAgentConnected) {
+                if (!skipQueue) {
+                    pendingAgentMessages.push(trimmed);
+                }
+
+                if (!isConnectingToAgent && !isAgentConnected) {
+                    launchSalesforceChat();
+                }
+                return;
+            }
+
+            const session = await refreshMiawSessionIfNeeded();
+            const accessToken = session && session.accessToken;
+
+            if (!accessToken) {
+                throw new Error('Missing Salesforce session token.');
+            }
+
+            const bodyPayload = {
+                accessToken,
+                conversationId: miawConversation.conversationId,
+                message: trimmed,
+                clientMessageId: generateClientMessageId()
+            };
+
+            let response;
+            let payload = {};
+
+            try {
+                response = await fetch('/api/miaw.js?action=sendMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyPayload)
+                });
+
+                try {
+                    payload = await response.json();
+                } catch (parseError) {
+                    payload = {};
+                }
+            } catch (error) {
+                console.error('sendMessageToAgent network error', error);
+                throw error;
+            }
+
+            if (response && response.status === 401 && !options._retried) {
+                const context = (miawSession && miawSession.context) || buildMiawContext();
+                await createMiawSession(context, { forceRefresh: true });
+                const metadata = (miawConversation && miawConversation.metadata) || buildMiawConversationMetadata();
+                await createMiawConversation(miawSession.accessToken, metadata, { _retried: true });
+                await establishSseConnection(miawSession.accessToken, miawConversation.routingKey).catch((error) => {
+                    console.warn('Unable to re-establish SSE after token refresh', error);
+                });
+                await sendInitialAgentContextMessage();
+                return sendMessageToAgent(message, { ...options, skipQueue: true, _retried: true });
+            }
+
+            if (!response || !response.ok || !payload || payload.success !== true) {
+                const messageText = payload && payload.error
+                    ? payload.error
+                    : `Unable to send message (status ${response ? response.status : 'unknown'})`;
+                throw new Error(messageText);
+            }
+        }
+
+        async function sendInitialAgentContextMessage() {
+            if (!miawConversation || miawConversation.hasSentInitialMessage) {
+                return;
+            }
+
+            const initialMessage = buildInitialAgentMessage();
+            if (!initialMessage) {
+                miawConversation.hasSentInitialMessage = true;
+                persistMiawState();
+                return;
+            }
+
+            try {
+                await sendMessageToAgent(initialMessage, { skipQueue: true });
+                miawConversation.hasSentInitialMessage = true;
+                persistMiawState();
+            } catch (error) {
+                console.warn('Unable to send initial agent context message', error);
+            }
+        }
+
+        function disconnectFromAgent(options = {}) {
+            const {
+                userInitiated = false,
+                silent = false,
+                reason = null,
+                bannerMessage = null
+            } = options;
+
+            if (miawEventSource) {
+                try {
+                    miawEventSource.close();
+                } catch (error) {
+                    // ignore
+                }
+                miawEventSource = null;
+            }
+
+            if (agentTypingTimer) {
+                clearTimeout(agentTypingTimer);
+                agentTypingTimer = null;
+            }
+
+            hideAgentTyping();
+
+            isAgentConnected = false;
+            isConnectingToAgent = false;
+            miawConnectionState = MIAW_CONNECTION_STATES.DISCONNECTED;
+            miawRetryCount = 0;
+            miawBackoffDelay = MIAW_INITIAL_BACKOFF_MS;
+
+            pendingAgentMessages = [];
+            hasPendingAgentNotification = false;
+
+            const bannerText = bannerMessage
+                || (userInitiated
+                    ? 'Live chat ended. Reach out anytime!'
+                    : reason === 'conversationended'
+                        ? 'Live chat ended by agent. You can restart anytime.'
+                        : 'Live chat ended. You can restart anytime from here.');
+
+            updateAgentUi(miawConnectionState, {
+                agentName: agentMetadata.name,
+                bannerMessage: bannerText,
+                error: null
+            });
+
+            clearMiawState();
+
+            if (!silent) {
+                addMessage('bot', `
+                    <div>
+                        <strong>Live chat ended.</strong><br>
+                        ${userInitiated
+                            ? 'Feel free to message me if you need anything else.'
+                            : `If you still need immediate help, call us at <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a>.`}
+                    </div>
+                `, true);
+            }
+        }
+
+        function retryAgentConnection() {
+            if (isConnectingToAgent) {
+                return;
+            }
+
+            const hasConnectionDetails = miawSession && miawSession.accessToken && miawConversation && miawConversation.routingKey;
+
+            if (!hasConnectionDetails) {
+                launchSalesforceChat();
+                return;
+            }
+
+            miawRetryCount = 0;
+            miawBackoffDelay = MIAW_INITIAL_BACKOFF_MS;
+            isAgentConnected = false;
+            isConnectingToAgent = true;
+
+            updateAgentUi(MIAW_CONNECTION_STATES.CONNECTING, {
+                agentName: agentMetadata.name,
+                statusText: 'Reconnecting to live agent…'
+            });
+
+            establishSseConnection(miawSession.accessToken, miawConversation.routingKey)
+                .then(() => sendInitialAgentContextMessage())
+                .catch((error) => {
+                    console.warn('Retry connection failed', error);
+                    updateAgentUi(MIAW_CONNECTION_STATES.ERROR, {
+                        error: 'Unable to reconnect. Please try again in a moment.'
+                    });
+                });
+        }
+
+        function rehydrateMiawState() {
+            if (typeof sessionStorage === 'undefined') {
+                return;
+            }
+
+            let raw = null;
+            try {
+                raw = sessionStorage.getItem(MIAW_SESSION_KEY);
+            } catch (error) {
+                console.warn('Unable to access stored MIAW session', error);
+                return;
+            }
+
+            if (!raw) {
+                return;
+            }
+
+            try {
+                const stored = JSON.parse(raw);
+                if (!stored || !stored.session || !stored.session.accessToken) {
+                    sessionStorage.removeItem(MIAW_SESSION_KEY);
+                    return;
+                }
+
+                const expiresAt = Number(stored.session.expiresAt);
+                if (expiresAt && expiresAt <= Date.now() + 15000) {
+                    sessionStorage.removeItem(MIAW_SESSION_KEY);
+                    return;
+                }
+
+                miawSession = stored.session;
+                miawConversation = stored.conversation || null;
+                agentMetadata = { ...agentMetadata, ...(stored.agentMetadata || {}) };
+
+                isAgentConnected = false;
+                isConnectingToAgent = Boolean(miawConversation);
+                miawConnectionState = isConnectingToAgent
+                    ? MIAW_CONNECTION_STATES.CONNECTING
+                    : MIAW_CONNECTION_STATES.IDLE;
+
+                scheduleSessionRefresh(miawSession.expiresAt);
+                updateAgentUi(miawConnectionState, { agentName: agentMetadata.name });
+
+                if (miawConversation && miawConversation.routingKey) {
+                    establishSseConnection(miawSession.accessToken, miawConversation.routingKey, { isRehydrate: true })
+                        .then(() => sendInitialAgentContextMessage())
+                        .catch((error) => {
+                            console.warn('Unable to resume live agent connection', error);
+                            isConnectingToAgent = false;
+                            miawConnectionState = MIAW_CONNECTION_STATES.ERROR;
+                            updateAgentUi(miawConnectionState, { error: 'Unable to resume live chat. Please retry.' });
+                        });
+                }
+            } catch (error) {
+                console.warn('Unable to rehydrate MIAW session', error);
+                sessionStorage.removeItem(MIAW_SESSION_KEY);
+            }
         }
 
         // Add message to chat
-        function addMessage(type, content, isHTML = false) {
+        function addMessage(type, content, isHTML = false, meta = {}) {
             const container = document.getElementById('messagesContainer');
 
+            const messageType = type === 'agent' ? 'agent' : type;
             const messageDiv = document.createElement('div');
-            messageDiv.className = `dcg-message ${type}`;
+            messageDiv.className = `dcg-message ${messageType}`;
 
             const wrapperDiv = document.createElement('div');
             wrapperDiv.className = 'dcg-msg-wrapper';
 
             const avatarDiv = document.createElement('div');
             avatarDiv.className = 'dcg-msg-avatar';
-            avatarDiv.innerHTML = type === 'bot'
-                ? '<img src="DCG-AI-bot-userpic-01.png" alt="DCG" />'
-                : '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+            if (messageType === 'bot') {
+                avatarDiv.innerHTML = '<img src="DCG-AI-bot-userpic-01.png" alt="DCG" />';
+            } else if (messageType === 'agent') {
+                avatarDiv.innerHTML = AGENT_AVATAR_HTML;
+            } else {
+                avatarDiv.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+            }
 
             const bubbleDiv = document.createElement('div');
             bubbleDiv.className = 'dcg-msg-bubble';
 
-            if (isHTML) {
+            if (messageType === 'agent') {
+                bubbleDiv.classList.add('dcg-agent-bubble');
+                const agentName = meta.agentName || agentMetadata.name || AGENT_DEFAULT_NAME;
+                const indicator = meta.agentLabel || agentName || AGENT_INDICATOR_LABEL;
+                const timestamp = formatAgentTimestamp(meta.timestamp);
+                const attachmentsMarkup = renderAgentAttachments(meta.attachments);
+                const bodyContent = isHTML ? content : escapeHtml(content);
+                const bodyWrapper = `<div class="dcg-agent-body">${bodyContent}</div>`;
+                const attachmentsBlock = attachmentsMarkup
+                    ? `<div class="dcg-agent-message-attachments">${attachmentsMarkup}</div>`
+                    : '';
+                bubbleDiv.innerHTML = `
+                    <div class="dcg-agent-content">
+                        <div class="dcg-agent-badge-row">
+                            <span class="dcg-agent-badge">${escapeHtml(indicator || AGENT_INDICATOR_LABEL)}</span>
+                            <span class="dcg-agent-timestamp">${timestamp}</span>
+                        </div>
+                        ${bodyWrapper}
+                        ${attachmentsBlock}
+                    </div>
+                `;
+            } else if (isHTML) {
                 bubbleDiv.innerHTML = content;
             } else {
                 bubbleDiv.textContent = content;
@@ -1013,7 +2432,8 @@
             container.appendChild(messageDiv);
 
             // Save message with memory limit
-            messages.push({ type, content, isHTML });
+            const serializedMeta = meta && Object.keys(meta).length > 0 ? { ...meta } : null;
+            messages.push({ type: messageType, content, isHTML, meta: serializedMeta });
 
             // Prevent memory leak by limiting message history
             if (messages.length > MAX_MESSAGES) {
@@ -1869,84 +3289,98 @@
                 }
             }
 
-            const hasUtilApi = !!(window.embeddedservice_bootstrap && window.embeddedservice_bootstrap.utilAPI);
-
-            if (!isMIAWReady && !hasUtilApi) {
+            if (isAgentConnected) {
+                const agentName = agentMetadata.name || AGENT_DEFAULT_NAME;
                 addMessage('bot', `
                     <div class="dcg-success-msg">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            <path d="M9 16.17 4.83 12l-1.42 1.41L9 19l12-12-1.41-1.41z" />
                         </svg>
                         <div>
-                            <strong>Connecting you to live chat...</strong><br>
-                            Please wait a moment while we initialize the chat system.
+                            <strong>${escapeHtml(agentName)} is already connected.</strong><br>
+                            Send your next question and they will respond right away.
                         </div>
                     </div>
                 `, true);
-
-                // Retry after a short delay
-                setTimeout(() => {
-                    const retryHasUtilApi = !!(window.embeddedservice_bootstrap && window.embeddedservice_bootstrap.utilAPI);
-                    if (isMIAWReady || retryHasUtilApi) {
-                        if (retryHasUtilApi && !isMIAWReady) {
-                            isMIAWReady = true;
-                            window.isMIAWReady = true;
-                        }
-                        launchSalesforceChat();
-                    } else {
-                        addMessage('bot', `
-                            <div>
-                                <strong>Chat system is temporarily unavailable.</strong><br>
-                                Please try calling our sales team at <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a> or try again in a moment.
-                            </div>
-                        `, true);
-                    }
-                }, 2000);
                 return;
             }
 
-            if (hasUtilApi && !isMIAWReady) {
-                isMIAWReady = true;
-                window.isMIAWReady = true;
+            if (isConnectingToAgent) {
+                addMessage('bot', `
+                    <div>
+                        <strong>Still working on it...</strong><br>
+                        I\'m finalizing the secure handoff to a DCG specialist right now.
+                    </div>
+                `, true);
+                return;
             }
 
             addMessage('bot', `
                 <div class="dcg-success-msg">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        <path d="M9 16.17 4.83 12l-1.42 1.41L9 19l12-12-1.41-1.41z" />
                     </svg>
                     <div>
-                        <strong>Launching live chat...</strong><br>
-                        You'll be connected with a debt relief specialist in just a moment.
+                        <strong>Connecting you with a live DCG specialist...</strong><br>
+                        Hang tight while I open our secure chat line.
                     </div>
                 </div>
             `, true);
 
-            launchSalesforceChat();
+            launchSalesforceChat().catch((error) => {
+                console.error('launchSalesforceChat error', error);
+            });
         }
 
-        function launchSalesforceChat() {
+        async function launchSalesforceChat() {
+            if (isAgentConnected) {
+                updateAgentUi(MIAW_CONNECTION_STATES.CONNECTED, { agentName: agentMetadata.name });
+                return;
+            }
+
+            if (isConnectingToAgent) {
+                updateAgentUi(MIAW_CONNECTION_STATES.CONNECTING, { agentName: agentMetadata.name });
+                return;
+            }
+
+            isConnectingToAgent = true;
+            miawConnectionState = MIAW_CONNECTION_STATES.CONNECTING;
+            updateAgentUi(miawConnectionState, { agentName: agentMetadata.name });
+
             try {
-                // Use the Salesforce embedded messaging API to open chat
-                if (window.embeddedservice_bootstrap && window.embeddedservice_bootstrap.utilAPI) {
-                    window.embeddedservice_bootstrap.utilAPI.openWidget();
-                } else {
-                    console.error('Salesforce embedded messaging API not available');
-                    addMessage('bot', `
-                        <div>
-                            <strong>Unable to launch chat at this time.</strong><br>
-                            Please call our sales team at <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a> for immediate assistance.
-                        </div>
-                    `, true);
-                }
+                const context = buildMiawContext();
+                const session = await createMiawSession(context);
+                const metadata = buildMiawConversationMetadata();
+                const conversation = await createMiawConversation(session.accessToken, metadata);
+                await establishSseConnection(session.accessToken, conversation.routingKey);
+                await sendInitialAgentContextMessage();
+                updateAgentUi(MIAW_CONNECTION_STATES.CONNECTED, { agentName: agentMetadata.name });
             } catch (error) {
-                console.error('Error launching Salesforce chat:', error);
+                console.error('launchSalesforceChat error', error);
+                isAgentConnected = false;
+                isConnectingToAgent = false;
+                miawConnectionState = MIAW_CONNECTION_STATES.ERROR;
+
+                const friendly = error && error.message
+                    ? error.message
+                    : 'We were unable to connect to a live agent right now. Please try again shortly.';
+
+                updateAgentUi(miawConnectionState, {
+                    error: friendly,
+                    bannerMessage: friendly
+                });
+
                 addMessage('bot', `
                     <div>
-                        <strong>Chat connection failed.</strong><br>
-                        Please call our sales team at <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a> for immediate assistance.
+                        <strong>Sorry, the live chat could not connect.</strong><br>
+                        ${escapeHtml(friendly)}<br>
+                        Call us at <a href="tel:${SALES_PHONE.raw}">${SALES_PHONE.display}</a> for immediate assistance.
                     </div>
                 `, true);
+
+                throw error;
+            } finally {
+                persistMiawState();
             }
         }
 

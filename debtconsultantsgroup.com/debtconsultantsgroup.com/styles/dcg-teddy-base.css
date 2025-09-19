@@ -713,6 +713,28 @@
         }
 
         /* Messages Area */
+        .dcg-live-chat-region {
+            position: relative;
+            flex: 1;
+            display: flex;
+        }
+
+        .dcg-live-chat-region .dcg-messages-container {
+            flex: 1;
+        }
+
+        .dcg-salesforce-chat {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: white;
+            z-index: 20;
+        }
+
+        .dcg-salesforce-chat.dcg-visible {
+            display: block;
+        }
+
         .dcg-messages-container {
             flex: 1;
             overflow-y: auto;
