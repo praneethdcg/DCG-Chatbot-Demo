@@ -666,25 +666,33 @@ async function handleSse(req, res, requestId) {
   const scrtUrl = getBaseScrtUrl();
   const sseUrl = new URL(`${scrtUrl}/eventrouter/v1/sse`);
 
-  if (routingKey) {
-    sseUrl.searchParams.set('routingKey', routingKey);
-  }
-
-  if (retry) {
-    sseUrl.searchParams.set('retry', retry);
-  }
+  // Note: According to Salesforce docs, routingKey should be passed as Last-Event-Id header
+  // not as a query parameter
 
   let upstream;
 
   try {
+    const headers = {
+      'Accept': 'text/event-stream',
+      'Authorization': `Bearer ${accessToken}`,
+      'OrgId': process.env.SALESFORCE_ORG_ID,
+      'Cache-Control': 'no-cache'
+    };
+
+    // Add Last-Event-Id header if routingKey is provided
+    if (routingKey) {
+      headers['Last-Event-Id'] = routingKey;
+    }
+
+    console.log(`[${requestId}] Connecting to SSE with headers:`, {
+      hasLastEventId: !!routingKey,
+      lastEventId: routingKey ? maskValue(routingKey) : null,
+      url: sseUrl.toString()
+    });
+
     upstream = await fetch(sseUrl, {
       method: 'GET',
-      headers: {
-        'Accept': 'text/event-stream',
-        'Authorization': `Bearer ${accessToken}`,
-        'OrgId': process.env.SALESFORCE_ORG_ID,
-        'Cache-Control': 'no-cache'
-      }
+      headers
     });
   } catch (error) {
     console.error(`[${requestId}] MIAW SSE connection error:`, {
