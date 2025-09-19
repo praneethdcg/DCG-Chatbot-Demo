@@ -1,8 +1,145 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { Readable } from 'stream';
+import crypto from 'crypto';
 
 let ratelimit = null;
+
+// Generate unique request IDs for tracking
+function generateRequestId() {
+  return `req_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+}
+
+// Sanitize headers for logging (remove sensitive data)
+function sanitizeHeaders(headers) {
+  const sanitized = {};
+  const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'x-auth-token'];
+
+  for (const [key, value] of Object.entries(headers)) {
+    const lowerKey = key.toLowerCase();
+    if (sensitiveHeaders.includes(lowerKey)) {
+      sanitized[key] = maskValue(Array.isArray(value) ? value[0] : value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+
+  return sanitized;
+}
+
+// Validate environment variable format and constraints
+function validateEnvironmentVariables() {
+  const validationResults = {
+    valid: true,
+    errors: [],
+    warnings: [],
+    variables: {}
+  };
+
+  // Check required variables
+  const required = [
+    { key: 'SALESFORCE_CONSUMER_KEY', minLength: 10, pattern: /^[a-zA-Z0-9._]+$/ },
+    { key: 'SALESFORCE_CONSUMER_SECRET', minLength: 20 },
+    { key: 'SALESFORCE_SCRT_URL', pattern: /^https?:\/\/.+/, type: 'url' },
+    { key: 'SALESFORCE_ORG_ID', pattern: /^00D[a-zA-Z0-9]+$/, length: 18 },
+    { key: 'SALESFORCE_ES_DEVELOPER_NAME', minLength: 1 }
+  ];
+
+  for (const config of required) {
+    const value = process.env[config.key];
+
+    if (!value) {
+      validationResults.valid = false;
+      validationResults.errors.push(`${config.key} is missing`);
+      validationResults.variables[config.key] = { status: 'missing' };
+      continue;
+    }
+
+    validationResults.variables[config.key] = {
+      status: 'present',
+      masked: maskValue(value),
+      length: value.length
+    };
+
+    // Validate URL format
+    if (config.type === 'url' || config.pattern?.source.includes('https')) {
+      try {
+        new URL(value);
+        validationResults.variables[config.key].validUrl = true;
+      } catch {
+        validationResults.errors.push(`${config.key} is not a valid URL: ${maskValue(value)}`);
+        validationResults.valid = false;
+        validationResults.variables[config.key].validUrl = false;
+      }
+    }
+
+    // Validate pattern
+    if (config.pattern && !config.pattern.test(value)) {
+      validationResults.errors.push(`${config.key} does not match expected format: ${maskValue(value)}`);
+      validationResults.valid = false;
+    }
+
+    // Validate length
+    if (config.length && value.length !== config.length) {
+      validationResults.errors.push(`${config.key} should be exactly ${config.length} characters, got ${value.length}`);
+      validationResults.valid = false;
+    }
+
+    // Validate minimum length
+    if (config.minLength && value.length < config.minLength) {
+      validationResults.errors.push(`${config.key} should be at least ${config.minLength} characters, got ${value.length}`);
+      validationResults.valid = false;
+    }
+  }
+
+  // Check optional variables
+  const optional = [
+    'SALESFORCE_CAPABILITIES_VERSION',
+    'SALESFORCE_MIAW_PLATFORM',
+    'UPSTASH_REDIS_REST_URL',
+    'UPSTASH_REDIS_REST_TOKEN'
+  ];
+
+  for (const key of optional) {
+    const value = process.env[key];
+    if (value) {
+      validationResults.variables[key] = {
+        status: 'present',
+        masked: maskValue(value),
+        length: value.length
+      };
+    } else {
+      validationResults.variables[key] = { status: 'not set' };
+      if (key.startsWith('UPSTASH')) {
+        validationResults.warnings.push(`${key} not set - rate limiting disabled`);
+      }
+    }
+  }
+
+  return validationResults;
+}
+
+// Log environment validation at startup
+const startupValidation = validateEnvironmentVariables();
+console.log('MIAW API Handler Startup:', {
+  event: 'startup_validation',
+  timestamp: new Date().toISOString(),
+  environment: {
+    valid: startupValidation.valid,
+    errors: startupValidation.errors,
+    warnings: startupValidation.warnings,
+    variables: startupValidation.variables
+  },
+  nodeVersion: process.version,
+  platform: process.platform
+});
+
+if (!startupValidation.valid) {
+  console.error('CRITICAL: Environment validation failed at startup', {
+    errors: startupValidation.errors,
+    suggestion: 'Check your environment variables in Vercel dashboard or .env file'
+  });
+}
 
 try {
   const hasUpstashConfig = Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
@@ -77,20 +214,22 @@ function maskValue(value) {
   return `${value.slice(0, 4)}***${value.slice(-2)}`;
 }
 
-function ensureEnv() {
-  const required = [
-    'SALESFORCE_CONSUMER_KEY',
-    'SALESFORCE_CONSUMER_SECRET',
-    'SALESFORCE_SCRT_URL',
-    'SALESFORCE_ORG_ID',
-    'SALESFORCE_ES_DEVELOPER_NAME'
-  ];
+function ensureEnv(requestId) {
+  const validation = validateEnvironmentVariables();
 
-  const missing = required.filter(key => !process.env[key]);
+  if (!validation.valid) {
+    console.error(`[${requestId}] Environment validation failed:`, {
+      errors: validation.errors,
+      variables: validation.variables,
+      timestamp: new Date().toISOString()
+    });
 
-  if (missing.length) {
-    throw new Error(`MIAW configuration missing: ${missing.join(', ')}`);
+    const error = new Error(`MIAW configuration invalid`);
+    error.validation = validation;
+    throw error;
   }
+
+  return validation;
 }
 
 async function fetchJson(url, options) {
@@ -142,8 +281,17 @@ function getClientIp(req) {
   return typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : 'unknown';
 }
 
-async function handleCreateSession(body, res, rateLimitRemaining) {
-  ensureEnv();
+async function handleCreateSession(body, res, rateLimitRemaining, requestId) {
+  const envValidation = ensureEnv(requestId);
+
+  console.log(`[${requestId}] Creating session:`, {
+    event: 'create_session_start',
+    timestamp: new Date().toISOString(),
+    envValid: envValidation.valid,
+    hasContext: !!body.context,
+    capabilitiesVersion: body.capabilitiesVersion || DEFAULT_CAPABILITIES_VERSION,
+    platform: body.platform || DEFAULT_PLATFORM
+  });
 
   const {
     context = {},
@@ -176,12 +324,15 @@ async function handleCreateSession(body, res, rateLimitRemaining) {
       })
     });
 
-    console.log({
+    console.log(`[${requestId}] Session created successfully:`, {
       event: 'miaw_session_created',
+      requestId,
       capabilitiesVersion,
       platform,
       timestamp: new Date().toISOString(),
-      accessToken: maskValue(data?.accessToken)
+      accessToken: maskValue(data?.accessToken),
+      expiresIn: data?.expiresIn,
+      responseTime: Date.now() - parseInt(requestId.split('_')[1])
     });
 
     const expiresIn = typeof data?.expiresIn === 'number' ? data.expiresIn : null;
@@ -195,12 +346,31 @@ async function handleCreateSession(body, res, rateLimitRemaining) {
       rateLimitRemaining: rateLimitRemaining ?? null
     });
   } catch (error) {
-    console.error('MIAW createSession error:', error?.message || error);
+    console.error(`[${requestId}] MIAW createSession error:`, {
+      message: error?.message || error,
+      status: error?.status,
+      details: error?.details,
+      timestamp: new Date().toISOString(),
+      requestDuration: Date.now() - parseInt(requestId.split('_')[1])
+    });
 
     const status = error?.status || 502;
     const payload = {
       success: false,
-      error: 'Unable to create a Salesforce messaging session. Please try again shortly.'
+      error: 'Unable to create a Salesforce messaging session. Please try again shortly.',
+      requestId,
+      diagnostics: {
+        timestamp: new Date().toISOString(),
+        environmentValid: !error.validation || error.validation.valid,
+        scrtUrl: maskValue(process.env.SALESFORCE_SCRT_URL),
+        orgId: maskValue(process.env.SALESFORCE_ORG_ID),
+        errorType: error.name || 'Unknown',
+        suggestion: status === 401
+          ? 'Check SALESFORCE_CONSUMER_KEY and SALESFORCE_CONSUMER_SECRET in environment'
+          : status >= 500
+          ? 'Salesforce service may be temporarily unavailable'
+          : 'Verify all Salesforce configuration settings'
+      }
     };
 
     if (status === 401) {
@@ -211,12 +381,24 @@ async function handleCreateSession(body, res, rateLimitRemaining) {
       payload.details = error.details;
     }
 
+    if (error?.validation) {
+      payload.diagnostics.validationErrors = error.validation.errors;
+    }
+
     return res.status(status).json(payload);
   }
 }
 
-async function handleCreateConversation(body, res, rateLimitRemaining) {
-  ensureEnv();
+async function handleCreateConversation(body, res, rateLimitRemaining, requestId) {
+  const envValidation = ensureEnv(requestId);
+
+  console.log(`[${requestId}] Creating conversation:`, {
+    event: 'create_conversation_start',
+    timestamp: new Date().toISOString(),
+    envValid: envValidation.valid,
+    hasMetadata: !!body.metadata,
+    hasChannelMetadata: !!body.channelMetadata
+  });
 
   const { accessToken, metadata, channelMetadata } = body;
 
@@ -260,10 +442,12 @@ async function handleCreateConversation(body, res, rateLimitRemaining) {
 
     const upstreamConversationId = data?.id || data?.conversationId || null;
 
-    console.log({
+    console.log(`[${requestId}] Conversation created successfully:`, {
       event: 'miaw_conversation_created',
+      requestId,
       timestamp: new Date().toISOString(),
-      conversationId: upstreamConversationId ? maskValue(upstreamConversationId) : null
+      conversationId: upstreamConversationId ? maskValue(upstreamConversationId) : null,
+      responseTime: Date.now() - parseInt(requestId.split('_')[1])
     });
 
     return res.status(200).json({
@@ -272,18 +456,28 @@ async function handleCreateConversation(body, res, rateLimitRemaining) {
       rateLimitRemaining: rateLimitRemaining ?? null
     });
   } catch (error) {
-    console.error('MIAW createConversation error:', error?.message || error);
-    console.error('Error details:', {
+    console.error(`[${requestId}] MIAW createConversation error:`, {
+      message: error?.message || error,
       status: error?.status,
       details: error?.details,
-      esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME,
-      url: createUrl
+      esDeveloperName: maskValue(process.env.SALESFORCE_ES_DEVELOPER_NAME),
+      url: createUrl,
+      timestamp: new Date().toISOString(),
+      requestDuration: Date.now() - parseInt(requestId.split('_')[1])
     });
 
     const status = error?.status || 502;
     const payloadResponse = {
       success: false,
-      error: 'Failed to create conversation with Salesforce. Please retry.'
+      error: 'Failed to create conversation with Salesforce. Please retry.',
+      requestId,
+      diagnostics: {
+        timestamp: new Date().toISOString(),
+        environmentValid: !error.validation || error.validation.valid,
+        suggestion: status === 401
+          ? 'Access token may be expired or invalid'
+          : 'Check conversation endpoint configuration'
+      }
     };
 
     if (error?.status === 401) {
@@ -294,12 +488,25 @@ async function handleCreateConversation(body, res, rateLimitRemaining) {
       payloadResponse.details = error.details;
     }
 
+    if (error?.validation) {
+      payloadResponse.diagnostics.validationErrors = error.validation.errors;
+    }
+
     return res.status(status).json(payloadResponse);
   }
 }
 
-async function handleSendMessage(body, res, rateLimitRemaining) {
-  ensureEnv();
+async function handleSendMessage(body, res, rateLimitRemaining, requestId) {
+  const envValidation = ensureEnv(requestId);
+
+  console.log(`[${requestId}] Sending message:`, {
+    event: 'send_message_start',
+    timestamp: new Date().toISOString(),
+    envValid: envValidation.valid,
+    messageLength: body.message?.length,
+    messageType: body.messageType || 'Text',
+    hasAttachments: !!body.attachments
+  });
 
   const {
     accessToken,
@@ -376,11 +583,14 @@ async function handleSendMessage(body, res, rateLimitRemaining) {
       body: JSON.stringify(payload)
     });
 
-    console.log({
+    console.log(`[${requestId}] Message sent successfully:`, {
       event: 'miaw_message_sent',
+      requestId,
       conversationId: maskValue(conversationId),
       timestamp: new Date().toISOString(),
-      clientMessageId: clientMessageId ? maskValue(clientMessageId) : null
+      clientMessageId: clientMessageId ? maskValue(clientMessageId) : null,
+      messageType: resolvedMessageType,
+      responseTime: Date.now() - parseInt(requestId.split('_')[1])
     });
 
     return res.status(200).json({
@@ -389,12 +599,30 @@ async function handleSendMessage(body, res, rateLimitRemaining) {
       rateLimitRemaining: rateLimitRemaining ?? null
     });
   } catch (error) {
-    console.error('MIAW sendMessage error:', error?.message || error);
+    console.error(`[${requestId}] MIAW sendMessage error:`, {
+      message: error?.message || error,
+      status: error?.status,
+      details: error?.details,
+      conversationId: maskValue(conversationId),
+      timestamp: new Date().toISOString(),
+      requestDuration: Date.now() - parseInt(requestId.split('_')[1])
+    });
 
     const status = error?.status || 502;
     const payloadResponse = {
       success: false,
-      error: 'Failed to deliver message to Salesforce. Please retry.'
+      error: 'Failed to deliver message to Salesforce. Please retry.',
+      requestId,
+      diagnostics: {
+        timestamp: new Date().toISOString(),
+        environmentValid: !error.validation || error.validation.valid,
+        conversationId: maskValue(conversationId),
+        suggestion: status === 401
+          ? 'Access token may be expired or invalid'
+          : status === 404
+          ? 'Conversation may not exist or has expired'
+          : 'Check message payload and Salesforce service status'
+      }
     };
 
     if (status === 401) {
@@ -405,12 +633,24 @@ async function handleSendMessage(body, res, rateLimitRemaining) {
       payloadResponse.details = error.details;
     }
 
+    if (error?.validation) {
+      payloadResponse.diagnostics.validationErrors = error.validation.errors;
+    }
+
     return res.status(status).json(payloadResponse);
   }
 }
 
-async function handleSse(req, res) {
-  ensureEnv();
+async function handleSse(req, res, requestId) {
+  const envValidation = ensureEnv(requestId);
+
+  console.log(`[${requestId}] SSE connection request:`, {
+    event: 'sse_connection_start',
+    timestamp: new Date().toISOString(),
+    envValid: envValidation.valid,
+    hasRoutingKey: !!getQueryParam(req, 'routingKey') || !!getQueryParam(req, 'routingId'),
+    hasRetry: !!getQueryParam(req, 'retry')
+  });
 
   const accessToken = getQueryParam(req, 'accessToken') || req.headers.authorization?.replace(/^Bearer\s+/i, '');
   // Accept legacy routingId while standardizing on routingKey for Salesforce SSE endpoint.
@@ -445,8 +685,21 @@ async function handleSse(req, res) {
       }
     });
   } catch (error) {
-    console.error('MIAW SSE connection error:', error?.message || error);
-    return res.status(502).json({ success: false, error: 'Unable to connect to Salesforce event stream.' });
+    console.error(`[${requestId}] MIAW SSE connection error:`, {
+      message: error?.message || error,
+      timestamp: new Date().toISOString(),
+      sseUrl: sseUrl.toString(),
+      requestDuration: Date.now() - parseInt(requestId.split('_')[1])
+    });
+    return res.status(502).json({
+      success: false,
+      error: 'Unable to connect to Salesforce event stream.',
+      requestId,
+      diagnostics: {
+        timestamp: new Date().toISOString(),
+        suggestion: 'Check Salesforce SSE endpoint availability and access token validity'
+      }
+    });
   }
 
   if (!upstream.ok) {
@@ -464,7 +717,17 @@ async function handleSse(req, res) {
     return res.status(upstream.status).json({
       success: false,
       error: 'Salesforce SSE endpoint rejected the request.',
-      details
+      details,
+      requestId,
+      diagnostics: {
+        timestamp: new Date().toISOString(),
+        upstreamStatus: upstream.status,
+        suggestion: upstream.status === 401
+          ? 'Access token is invalid or expired'
+          : upstream.status === 403
+          ? 'Check OrgId and permissions'
+          : 'Verify SSE endpoint configuration'
+      }
     });
   }
 
@@ -500,63 +763,189 @@ async function handleSse(req, res) {
   });
 
   stream.on('error', error => {
-    console.error('MIAW SSE stream error:', error?.message || error);
+    console.error(`[${requestId}] MIAW SSE stream error:`, {
+      message: error?.message || error,
+      timestamp: new Date().toISOString(),
+      routingKey: routingKey ? maskValue(routingKey) : null
+    });
     if (!res.headersSent) {
       res.write('event: error\n');
-      res.write(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: 'Stream error', requestId })}\n\n`);
     }
     res.end();
   });
 
   req.on('close', () => {
-    console.log({
+    console.log(`[${requestId}] SSE client disconnected:`, {
       event: 'miaw_sse_client_disconnected',
-      timestamp: new Date().toISOString()
+      requestId,
+      timestamp: new Date().toISOString(),
+      duration: Date.now() - parseInt(requestId.split('_')[1])
     });
     closeStream();
   });
 
-  console.log({
+  console.log(`[${requestId}] SSE connected successfully:`, {
     event: 'miaw_sse_connected',
+    requestId,
     routingKey: routingKey ? maskValue(routingKey) : null,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    connectionTime: Date.now() - parseInt(requestId.split('_')[1])
   });
 }
 
 export default async function handler(req, res) {
+  const requestId = generateRequestId();
+  const requestStart = Date.now();
   const origin = req.headers.origin;
 
+  // Comprehensive request logging
+  console.log(`[${requestId}] Incoming request:`, {
+    event: 'request_received',
+    requestId,
+    timestamp: new Date().toISOString(),
+    method: req.method,
+    url: req.url,
+    query: req.query,
+    headers: sanitizeHeaders(req.headers),
+    origin,
+    clientIp: getClientIp(req),
+    bodySize: req.body ? JSON.stringify(req.body).length : 0,
+    bodyType: typeof req.body,
+    hasBody: !!req.body,
+    vercelRegion: process.env.VERCEL_REGION,
+    functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION
+  });
+
   if (origin && !allowedOrigins.includes(origin)) {
+    console.log(`[${requestId}] CORS rejection:`, {
+      event: 'cors_forbidden',
+      requestId,
+      origin,
+      allowedOrigins,
+      timestamp: new Date().toISOString()
+    });
     applyCorsHeaders(res, origin);
-    return res.status(403).json({ success: false, error: 'Forbidden' });
+    return res.status(403).json({
+      success: false,
+      error: 'Forbidden',
+      requestId,
+      diagnostics: {
+        origin,
+        allowedOrigins,
+        suggestion: 'Add origin to allowedOrigins list if this should be permitted'
+      }
+    });
   }
 
   applyCorsHeaders(res, origin);
 
   if (req.method === 'OPTIONS') {
+    console.log(`[${requestId}] OPTIONS preflight:`, {
+      event: 'preflight_request',
+      requestId,
+      origin,
+      timestamp: new Date().toISOString()
+    });
     return res.status(204).end();
   }
 
   const action = getQueryParam(req, 'action');
 
-  console.log('MIAW API Request:', {
+  console.log(`[${requestId}] Action requested:`, {
+    event: 'action_processing',
+    requestId,
     action,
     method: req.method,
+    expectedMethod: action === 'sse' ? 'GET' : ['createSession', 'sendMessage', 'createConversation'].includes(action) ? 'POST' : 'ANY',
     hasBody: !!req.body,
-    bodyType: typeof req.body,
+    bodyKeys: req.body ? Object.keys(req.body) : [],
     timestamp: new Date().toISOString()
   });
 
   if (!action) {
-    return res.status(400).json({ success: false, error: 'Missing action parameter' });
+    console.log(`[${requestId}] Missing action parameter:`, {
+      event: 'missing_action',
+      requestId,
+      url: req.url,
+      query: req.query,
+      timestamp: new Date().toISOString()
+    });
+    return res.status(400).json({
+      success: false,
+      error: 'Missing action parameter',
+      requestId,
+      diagnostics: {
+        receivedUrl: req.url,
+        receivedQuery: req.query,
+        suggestion: 'Include ?action=createSession, ?action=sendMessage, ?action=createConversation, or ?action=sse in the URL'
+      }
+    });
   }
 
   if (action === 'sse' && req.method !== 'GET') {
-    return res.status(405).json({ success: false, error: 'SSE action only supports GET' });
+    console.log(`[${requestId}] Method mismatch for SSE:`, {
+      event: 'method_mismatch',
+      requestId,
+      action: 'sse',
+      expectedMethod: 'GET',
+      receivedMethod: req.method,
+      url: req.url,
+      timestamp: new Date().toISOString()
+    });
+    return res.status(405).json({
+      success: false,
+      error: 'SSE action only supports GET',
+      requestId,
+      diagnostics: {
+        action: 'sse',
+        expectedMethod: 'GET',
+        receivedMethod: req.method,
+        receivedUrl: req.url,
+        suggestion: 'Use GET method for SSE endpoint'
+      }
+    });
   }
 
   if ((action === 'createSession' || action === 'sendMessage' || action === 'createConversation') && req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: `${action} action only supports POST` });
+    console.log(`[${requestId}] Method mismatch for ${action}:`, {
+      event: 'method_mismatch',
+      requestId,
+      action,
+      expectedMethod: 'POST',
+      receivedMethod: req.method,
+      url: req.url,
+      headers: sanitizeHeaders(req.headers),
+      timestamp: new Date().toISOString(),
+      routingInfo: {
+        vercelUrl: req.headers['x-vercel-deployment-url'],
+        forwarded: req.headers['x-forwarded-proto'],
+        host: req.headers.host
+      }
+    });
+    return res.status(405).json({
+      success: false,
+      error: `${action} action only supports POST`,
+      requestId,
+      diagnostics: {
+        action,
+        expectedMethod: 'POST',
+        receivedMethod: req.method,
+        receivedUrl: req.url,
+        receivedHeaders: {
+          'content-type': req.headers['content-type'],
+          'x-vercel-deployment-url': req.headers['x-vercel-deployment-url'],
+          'host': req.headers.host
+        },
+        suggestion: `Use POST method for ${action} action. Check if your request is being redirected or proxied incorrectly.`,
+        possibleCauses: [
+          'Request method is incorrect in frontend code',
+          'Vercel routing configuration may be modifying the request',
+          'Proxy or CDN may be altering the request method',
+          'Browser may be sending preflight OPTIONS request'
+        ]
+      }
+    });
   }
 
   const ip = getClientIp(req);
@@ -580,31 +969,68 @@ export default async function handler(req, res) {
       retryAfterSeconds = diffSeconds > 0 ? diffSeconds : 1;
     }
 
+    console.log(`[${requestId}] Rate limit exceeded:`, {
+      event: 'rate_limit_exceeded',
+      requestId,
+      action,
+      clientIp: ip,
+      retryAfter: retryAfterSeconds,
+      timestamp: new Date().toISOString()
+    });
+
     res.setHeader('Retry-After', String(retryAfterSeconds));
     return res.status(429).json({
       success: false,
       error: 'Too many requests. Please try again later.',
-      retryAfter: retryAfterSeconds
+      retryAfter: retryAfterSeconds,
+      requestId
     });
+
   }
 
   const body = req.method === 'POST' ? parseBody(req.body) : {};
 
+  console.log(`[${requestId}] Processing action:`, {
+    event: 'action_dispatch',
+    requestId,
+    action,
+    method: req.method,
+    bodyKeys: Object.keys(body),
+    timestamp: new Date().toISOString()
+  });
+
   if (action === 'createSession') {
-    return handleCreateSession(body, res, rateLimitResult.remaining);
+    return handleCreateSession(body, res, rateLimitResult.remaining, requestId);
   }
 
   if (action === 'sendMessage') {
-    return handleSendMessage(body, res, rateLimitResult.remaining);
+    return handleSendMessage(body, res, rateLimitResult.remaining, requestId);
   }
 
   if (action === 'createConversation') {
-    return handleCreateConversation(body, res, rateLimitResult.remaining);
+    return handleCreateConversation(body, res, rateLimitResult.remaining, requestId);
   }
 
   if (action === 'sse') {
-    return handleSse(req, res);
+    return handleSse(req, res, requestId);
   }
 
-  return res.status(400).json({ success: false, error: `Unsupported action: ${action}` });
+  console.log(`[${requestId}] Unsupported action:`, {
+    event: 'unsupported_action',
+    requestId,
+    action,
+    validActions: ['createSession', 'sendMessage', 'createConversation', 'sse'],
+    timestamp: new Date().toISOString()
+  });
+
+  return res.status(400).json({
+    success: false,
+    error: `Unsupported action: ${action}`,
+    requestId,
+    diagnostics: {
+      receivedAction: action,
+      validActions: ['createSession', 'sendMessage', 'createConversation', 'sse'],
+      suggestion: 'Use one of the valid actions: createSession, sendMessage, createConversation, or sse'
+    }
+  });
 }

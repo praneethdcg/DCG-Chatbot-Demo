@@ -24,13 +24,26 @@
       "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/index.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api(?:/|$)).*)",
       "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/$1"
     }
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api).*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "X-Frame-Options",
