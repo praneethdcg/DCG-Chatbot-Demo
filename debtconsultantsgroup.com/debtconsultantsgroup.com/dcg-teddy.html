@@ -1809,7 +1809,13 @@
             const routingKey = data.routingKey
                 || data.routingId
                 || data.eventRouterKey
-                || (data.event && (data.event.routingKey || data.event.routingId || data.event.eventKey));
+                || (data.event && (data.event.routingKey || data.event.routingId || data.event.eventKey))
+                || (miawSession && miawSession.lastEventId);  // Use session lastEventId as fallback
+
+            // Handle session-based approach when conversation API is not available
+            if (data.sessionBased) {
+                console.log('Using session-based messaging (conversation API not available)');
+            }
 
             if (!conversationId) {
                 throw new Error('Missing conversationId from Salesforce response.');

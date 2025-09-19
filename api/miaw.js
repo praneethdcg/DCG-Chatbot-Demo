@@ -469,6 +469,35 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
     });
 
     const status = error?.status || 502;
+
+    // Handle 404 - conversation API not available, use session-based approach
+    if (status === 404) {
+      console.log(`[${requestId}] Conversation API not available, using session-based approach`);
+
+      // Parse the JWT token to get session information
+      const tokenParts = accessToken.split('.');
+      let tokenPayload = {};
+      try {
+        tokenPayload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+      } catch (e) {
+        console.error('Failed to parse JWT token');
+      }
+
+      // Create a mock conversation response using session data
+      const sessionBasedResponse = {
+        conversationId: tokenPayload.clientSessionId || `session_${Date.now()}`,
+        routingKey: tokenPayload.evtKey || tokenPayload.clientSessionId || `routing_${Date.now()}`,
+        conversationSupported: false,
+        sessionBased: true
+      };
+
+      return res.status(200).json({
+        success: true,
+        data: sessionBasedResponse,
+        rateLimitRemaining: rateLimitRemaining ?? null
+      });
+    }
+
     const payloadResponse = {
       success: false,
       error: 'Failed to create conversation with Salesforce. Please retry.',
