@@ -415,6 +415,7 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
   }
 
   const scrtUrl = getBaseScrtUrl();
+  // Try v2 first, then fallback to v1 if needed
   const createUrl = `${scrtUrl}/iamessage/api/v2/conversations`;
 
   const payload = {
@@ -470,25 +471,49 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
 
     const status = error?.status || 502;
 
-    // Handle 404 - conversation API not available, use session-based approach
+    // Handle 404 - conversation API not available, try v1 or use session-based approach
     if (status === 404) {
-      console.log(`[${requestId}] Conversation API not available, using session-based approach`);
+      console.log(`[${requestId}] v2 Conversation API not found, trying v1 endpoint`);
 
-      // For session-based messaging, the client needs to use the lastEventId from the session
-      // The routingKey should be passed from the frontend (it's the lastEventId from session creation)
-      const sessionBasedResponse = {
-        conversationId: `session_${Date.now()}`,
-        routingKey: body.lastEventId || body.routingKey || 'session_based',
-        conversationSupported: false,
-        sessionBased: true,
-        note: 'Using session-based messaging - use lastEventId from session for SSE connection'
-      };
+      // Try v1 endpoint
+      const v1Url = createUrl.replace('/api/v2/', '/api/v1/');
 
-      return res.status(200).json({
-        success: true,
-        data: sessionBasedResponse,
-        rateLimitRemaining: rateLimitRemaining ?? null
-      });
+      try {
+        const v1Data = await fetchJson(v1Url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'OrgId': process.env.SALESFORCE_ORG_ID
+          },
+          body: JSON.stringify(payload)
+        });
+
+        console.log(`[${requestId}] v1 Conversation created successfully`);
+        return res.status(200).json({
+          success: true,
+          data: v1Data,
+          rateLimitRemaining: rateLimitRemaining ?? null
+        });
+      } catch (v1Error) {
+        console.log(`[${requestId}] v1 also failed (${v1Error?.status}), using session-based approach`);
+
+        // For session-based messaging, the client needs to use the lastEventId from the session
+        // The routingKey should be passed from the frontend (it's the lastEventId from session creation)
+        const sessionBasedResponse = {
+          conversationId: `session_${Date.now()}`,
+          routingKey: body.lastEventId || body.routingKey || 'session_based',
+          conversationSupported: false,
+          sessionBased: true,
+          note: 'Using session-based messaging - use lastEventId from session for SSE connection'
+        };
+
+        return res.status(200).json({
+          success: true,
+          data: sessionBasedResponse,
+          rateLimitRemaining: rateLimitRemaining ?? null
+        });
+      }
     }
 
     const payloadResponse = {
@@ -590,7 +615,9 @@ async function handleSendMessage(body, res, rateLimitRemaining, requestId) {
   }
 
   const scrtUrl = getBaseScrtUrl();
+  // Try v2 endpoint, with fallback to v1 if needed
   const sendUrl = `${scrtUrl}/iamessage/api/v2/conversations/${encodeURIComponent(conversationId)}/messages`;
+  const v1SendUrl = `${scrtUrl}/iamessage/api/v1/conversations/${encodeURIComponent(conversationId)}/messages`;
 
   const payload = {
     message: {
@@ -652,6 +679,36 @@ async function handleSendMessage(body, res, rateLimitRemaining, requestId) {
     });
 
     const status = error?.status || 502;
+
+    // If v2 fails with 404, try v1
+    if (status === 404 && !conversationId.startsWith('session_')) {
+      console.log(`[${requestId}] v2 Send API not found, trying v1 endpoint`);
+
+      try {
+        const v1Data = await fetchJson(v1SendUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'OrgId': process.env.SALESFORCE_ORG_ID,
+          },
+          body: JSON.stringify(payload)
+        });
+
+        console.log(`[${requestId}] Message sent successfully via v1 API`);
+        return res.status(200).json({
+          success: true,
+          data: v1Data,
+          rateLimitRemaining: rateLimitRemaining ?? null
+        });
+      } catch (v1Error) {
+        console.error(`[${requestId}] v1 Send also failed:`, {
+          status: v1Error?.status,
+          message: v1Error?.message
+        });
+        // Continue with regular error handling
+      }
+    }
     const payloadResponse = {
       success: false,
       error: 'Failed to deliver message to Salesforce. Please retry.',
