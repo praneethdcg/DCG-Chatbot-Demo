@@ -6,9 +6,8 @@ let ratelimit = null;
 
 // Generate unique request IDs for tracking
 function generateRequestId() {
-  // Use Math.random for ID generation to avoid crypto module issues in Vercel
-  const randomHex = Math.random().toString(16).substring(2, 10);
-  return `req_${Date.now()}_${randomHex}`;
+  // Simple ID generation compatible with Vercel runtime
+  return `req_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
 }
 
 // Sanitize headers for logging (remove sensitive data)
@@ -333,7 +332,7 @@ async function handleCreateSession(body, res, rateLimitRemaining, requestId) {
       timestamp: new Date().toISOString(),
       accessToken: maskValue(data?.accessToken),
       expiresIn: data?.expiresIn,
-      responseTime: Date.now() - parseInt(requestId.split('_')[1])
+      responseTime: Date.now() - startTime
     });
 
     const expiresIn = typeof data?.expiresIn === 'number' ? data.expiresIn : null;
@@ -352,7 +351,7 @@ async function handleCreateSession(body, res, rateLimitRemaining, requestId) {
       status: error?.status,
       details: error?.details,
       timestamp: new Date().toISOString(),
-      requestDuration: Date.now() - parseInt(requestId.split('_')[1])
+      requestDuration: 0
     });
 
     const status = error?.status || 502;
@@ -448,7 +447,7 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
       requestId,
       timestamp: new Date().toISOString(),
       conversationId: upstreamConversationId ? maskValue(upstreamConversationId) : null,
-      responseTime: Date.now() - parseInt(requestId.split('_')[1])
+      responseTime: Date.now() - startTime
     });
 
     return res.status(200).json({
@@ -464,7 +463,7 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
       esDeveloperName: maskValue(process.env.SALESFORCE_ES_DEVELOPER_NAME),
       url: createUrl,
       timestamp: new Date().toISOString(),
-      requestDuration: Date.now() - parseInt(requestId.split('_')[1])
+      requestDuration: 0
     });
 
     const status = error?.status || 502;
@@ -591,7 +590,7 @@ async function handleSendMessage(body, res, rateLimitRemaining, requestId) {
       timestamp: new Date().toISOString(),
       clientMessageId: clientMessageId ? maskValue(clientMessageId) : null,
       messageType: resolvedMessageType,
-      responseTime: Date.now() - parseInt(requestId.split('_')[1])
+      responseTime: Date.now() - startTime
     });
 
     return res.status(200).json({
@@ -606,7 +605,7 @@ async function handleSendMessage(body, res, rateLimitRemaining, requestId) {
       details: error?.details,
       conversationId: maskValue(conversationId),
       timestamp: new Date().toISOString(),
-      requestDuration: Date.now() - parseInt(requestId.split('_')[1])
+      requestDuration: 0
     });
 
     const status = error?.status || 502;
@@ -690,7 +689,7 @@ async function handleSse(req, res, requestId) {
       message: error?.message || error,
       timestamp: new Date().toISOString(),
       sseUrl: sseUrl.toString(),
-      requestDuration: Date.now() - parseInt(requestId.split('_')[1])
+      requestDuration: 0
     });
     return res.status(502).json({
       success: false,
@@ -781,7 +780,7 @@ async function handleSse(req, res, requestId) {
       event: 'miaw_sse_client_disconnected',
       requestId,
       timestamp: new Date().toISOString(),
-      duration: Date.now() - parseInt(requestId.split('_')[1])
+      duration: 0
     });
     closeStream();
   });
@@ -791,13 +790,12 @@ async function handleSse(req, res, requestId) {
     requestId,
     routingKey: routingKey ? maskValue(routingKey) : null,
     timestamp: new Date().toISOString(),
-    connectionTime: Date.now() - parseInt(requestId.split('_')[1])
+    connectionTime: 0
   });
 }
 
 export default async function handler(req, res) {
   const requestId = generateRequestId();
-  const requestStart = Date.now();
   const origin = req.headers.origin;
 
   // Comprehensive request logging
