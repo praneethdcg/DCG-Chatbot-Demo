@@ -28,7 +28,7 @@ const allowedOrigins = [
   'http://localhost:3000'
 ];
 
-const DEFAULT_CAPABILITIES_VERSION = process.env.SALESFORCE_CAPABILITIES_VERSION || '1';
+const DEFAULT_CAPABILITIES_VERSION = process.env.SALESFORCE_CAPABILITIES_VERSION || '60';
 const DEFAULT_PLATFORM = process.env.SALESFORCE_MIAW_PLATFORM || 'Web';
 
 function applyCorsHeaders(res, origin) {
@@ -170,8 +170,8 @@ async function handleCreateSession(body, res, rateLimitRemaining) {
         orgId: process.env.SALESFORCE_ORG_ID,
         esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME,
         capabilitiesVersion,
-        platform,
-        context
+        platform
+        // Note: context is not included for unauthenticated access token
       })
     });
 

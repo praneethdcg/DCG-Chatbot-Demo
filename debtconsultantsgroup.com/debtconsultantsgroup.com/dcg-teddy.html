@@ -1522,24 +1522,27 @@
         }
 
         function buildMiawContext(overrides = {}) {
-            const context = {
+            // MIAW API only accepts specific context properties
+            // For unauthenticated access token generation, context should be empty or minimal
+            // Store our custom context separately if needed for internal use
+            const internalContext = {
                 originUrl: window.location.href,
                 hasProvidedContact: !!conversationContext.hasProvidedContact,
                 userIntent: conversationContext.userIntent || null,
                 lastUserMessage: getLastUserMessage() || null,
                 contact: conversationContext.contactDetails || null,
                 utm: getStoredUtmParameters(),
-                timestamp: Date.now(),
-                ...overrides
+                timestamp: Date.now()
             };
 
-            Object.keys(context).forEach((key) => {
-                const value = context[key];
-                const isEmptyString = typeof value === 'string' && !value.trim();
-                if (value === null || typeof value === 'undefined' || isEmptyString) {
-                    delete context[key];
-                }
-            });
+            // Return empty context for MIAW API
+            // The API doesn't accept custom properties like originUrl
+            const context = {};
+
+            // Only add overrides if they are specifically needed
+            if (overrides && Object.keys(overrides).length > 0) {
+                Object.assign(context, overrides);
+            }
 
             return context;
         }
@@ -1574,20 +1577,12 @@
         }
 
         function buildMiawConversationMetadata() {
-            const metadata = {
-                intent: conversationContext.userIntent || null,
-                contactProvided: !!conversationContext.hasProvidedContact,
-                pageUrl: window.location.href,
-                contact: conversationContext.contactDetails || null
-            };
+            // MIAW API expects specific metadata structure
+            // We'll send our custom data in the initial message instead
+            const metadata = {};
 
-            Object.keys(metadata).forEach((key) => {
-                const value = metadata[key];
-                const isEmptyString = typeof value === 'string' && !value.trim();
-                if (value === null || typeof value === 'undefined' || isEmptyString) {
-                    delete metadata[key];
-                }
-            });
+            // You can add specific MIAW-supported metadata fields here if needed
+            // For now, keep it empty to avoid API errors
 
             return metadata;
         }
