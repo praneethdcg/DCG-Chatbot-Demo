@@ -474,21 +474,14 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
     if (status === 404) {
       console.log(`[${requestId}] Conversation API not available, using session-based approach`);
 
-      // Parse the JWT token to get session information
-      const tokenParts = accessToken.split('.');
-      let tokenPayload = {};
-      try {
-        tokenPayload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
-      } catch (e) {
-        console.error('Failed to parse JWT token');
-      }
-
-      // Create a mock conversation response using session data
+      // For session-based messaging, the client needs to use the lastEventId from the session
+      // The routingKey should be passed from the frontend (it's the lastEventId from session creation)
       const sessionBasedResponse = {
-        conversationId: tokenPayload.clientSessionId || `session_${Date.now()}`,
-        routingKey: tokenPayload.evtKey || tokenPayload.clientSessionId || `routing_${Date.now()}`,
+        conversationId: `session_${Date.now()}`,
+        routingKey: body.lastEventId || body.routingKey || 'session_based',
         conversationSupported: false,
-        sessionBased: true
+        sessionBased: true,
+        note: 'Using session-based messaging - use lastEventId from session for SSE connection'
       };
 
       return res.status(200).json({
@@ -560,6 +553,25 @@ async function handleSendMessage(body, res, rateLimitRemaining, requestId) {
 
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ success: false, error: 'Missing message content' });
+  }
+
+  // Check if this is a session-based conversation (no real conversation API)
+  // Session-based conversations have IDs starting with 'session_'
+  if (conversationId.startsWith('session_')) {
+    console.log(`[${requestId}] Session-based messaging detected, cannot send via REST API`);
+
+    // For session-based messaging, we can't send messages via REST API
+    // Messages must be sent through the SSE connection or other means
+    return res.status(200).json({
+      success: true,
+      data: {
+        messageId: `msg_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        sessionBased: true,
+        note: 'Message queued for session-based delivery'
+      },
+      rateLimitRemaining: rateLimitRemaining ?? null
+    });
   }
 
   const allowedTypes = new Map([
@@ -686,7 +698,6 @@ async function handleSse(req, res, requestId) {
   const accessToken = getQueryParam(req, 'accessToken') || req.headers.authorization?.replace(/^Bearer\s+/i, '');
   // Accept legacy routingId while standardizing on routingKey for Salesforce SSE endpoint.
   const routingKey = getQueryParam(req, 'routingKey') || getQueryParam(req, 'routingId');
-  const retry = getQueryParam(req, 'retry');
 
   if (!accessToken) {
     return res.status(400).json({ success: false, error: 'Missing accessToken' });

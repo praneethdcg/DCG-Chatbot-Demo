@@ -1752,13 +1752,20 @@
 
             const bodyPayload = { accessToken };
 
+            // Include lastEventId from session for session-based messaging fallback
+            if (miawSession && miawSession.lastEventId) {
+                bodyPayload.lastEventId = miawSession.lastEventId;
+                bodyPayload.routingKey = miawSession.lastEventId;
+            }
+
             if (metadata && Object.keys(metadata).length) {
                 bodyPayload.metadata = metadata;
             }
 
             console.log('Creating MIAW conversation with payload:', {
                 hasAccessToken: !!bodyPayload.accessToken,
-                hasMetadata: !!bodyPayload.metadata
+                hasMetadata: !!bodyPayload.metadata,
+                hasLastEventId: !!bodyPayload.lastEventId
             });
 
             if (options.channelMetadata) {
