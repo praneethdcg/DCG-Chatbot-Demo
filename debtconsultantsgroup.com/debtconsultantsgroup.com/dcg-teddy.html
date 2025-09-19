@@ -1034,6 +1034,8 @@
             }
             if (!isSidebarMode) {
                 document.getElementById('dcg-backdrop').classList.add('active');
+                // Prevent body scrolling when modal is open
+                document.body.style.overflow = 'hidden';
             }
             document.getElementById('dcg-chat-modal').classList.add('active');
 
@@ -1084,6 +1086,9 @@
             isModalOpen = false;
             const modal = document.getElementById('dcg-chat-modal');
             modal.classList.add('dcg-modal-minimizing');
+
+            // Restore body scrolling
+            document.body.style.overflow = '';
 
             setTimeout(() => {
                 modal.classList.remove('active', 'dcg-modal-minimizing');

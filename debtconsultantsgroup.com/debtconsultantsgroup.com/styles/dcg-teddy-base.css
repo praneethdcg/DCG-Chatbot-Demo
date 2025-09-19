@@ -717,10 +717,14 @@
             position: relative;
             flex: 1;
             display: flex;
+            flex-direction: column;
+            min-height: 0; /* Important for flex children to scroll properly */
+            overflow: hidden;
         }
 
         .dcg-live-chat-region .dcg-messages-container {
             flex: 1;
+            min-height: 0; /* Allows scrolling within flex container */
         }
 
         .dcg-salesforce-chat {
