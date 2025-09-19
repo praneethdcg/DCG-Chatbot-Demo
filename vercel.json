@@ -19,10 +19,6 @@
       "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/dcg-savings-workshop.html"
     },
     {
-      "source": "/:path*.:ext(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)",
-      "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/:path*.:ext"
-    },
-    {
       "source": "/",
       "destination": "/debtconsultantsgroup.com/debtconsultantsgroup.com/index.html"
     },
