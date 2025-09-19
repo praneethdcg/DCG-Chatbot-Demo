@@ -41,7 +41,7 @@ function validateEnvironmentVariables() {
     { key: 'SALESFORCE_CONSUMER_KEY', minLength: 10, pattern: /^[a-zA-Z0-9._]+$/ },
     { key: 'SALESFORCE_CONSUMER_SECRET', minLength: 20 },
     { key: 'SALESFORCE_SCRT_URL', pattern: /^https?:\/\/.+/, type: 'url' },
-    { key: 'SALESFORCE_ORG_ID', pattern: /^00D[a-zA-Z0-9]+$/, length: 18 },
+    { key: 'SALESFORCE_ORG_ID', pattern: /^00D[a-zA-Z0-9]+$/, minLength: 14 },
     { key: 'SALESFORCE_ES_DEVELOPER_NAME', minLength: 1 }
   ];
 
