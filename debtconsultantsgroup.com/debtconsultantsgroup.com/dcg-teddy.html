@@ -1754,6 +1754,11 @@
                 bodyPayload.metadata = metadata;
             }
 
+            console.log('Creating MIAW conversation with payload:', {
+                hasAccessToken: !!bodyPayload.accessToken,
+                hasMetadata: !!bodyPayload.metadata
+            });
+
             if (options.channelMetadata) {
                 bodyPayload.channelMetadata = options.channelMetadata;
             }
@@ -3350,8 +3355,13 @@
             try {
                 const context = buildMiawContext();
                 const session = await createMiawSession(context);
+                console.log('MIAW Session created:', {
+                    hasAccessToken: !!session.accessToken,
+                    accessTokenLength: session.accessToken ? session.accessToken.length : 0
+                });
                 const metadata = buildMiawConversationMetadata();
                 const conversation = await createMiawConversation(session.accessToken, metadata);
+                console.log('MIAW Conversation created:', conversation);
                 await establishSseConnection(session.accessToken, conversation.routingKey);
                 await sendInitialAgentContextMessage();
                 updateAgentUi(MIAW_CONNECTION_STATES.CONNECTED, { agentName: agentMetadata.name });
