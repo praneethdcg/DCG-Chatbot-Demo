@@ -234,7 +234,9 @@ async function handleCreateConversation(body, res, rateLimitRemaining) {
   const scrtUrl = getBaseScrtUrl();
   const createUrl = `${scrtUrl}/iamessage/api/v2/conversations`;
 
-  const payload = {};
+  const payload = {
+    esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME
+  };
 
   if (metadata) {
     payload.metadata = metadata;
@@ -270,6 +272,12 @@ async function handleCreateConversation(body, res, rateLimitRemaining) {
     });
   } catch (error) {
     console.error('MIAW createConversation error:', error?.message || error);
+    console.error('Error details:', {
+      status: error?.status,
+      details: error?.details,
+      esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME,
+      url: createUrl
+    });
 
     const status = error?.status || 502;
     const payloadResponse = {
@@ -529,6 +537,13 @@ export default async function handler(req, res) {
   }
 
   const action = getQueryParam(req, 'action');
+
+  console.log('MIAW API Request:', {
+    action,
+    method: req.method,
+    hasBody: !!req.body,
+    bodyType: typeof req.body
+  });
 
   if (!action) {
     return res.status(400).json({ success: false, error: 'Missing action parameter' });
