@@ -30,6 +30,7 @@ const allowedOrigins = [
 
 const DEFAULT_CAPABILITIES_VERSION = process.env.SALESFORCE_CAPABILITIES_VERSION || '60';
 const DEFAULT_PLATFORM = process.env.SALESFORCE_MIAW_PLATFORM || 'Web';
+// GitHub integration test: 2025-01-20
 
 function applyCorsHeaders(res, origin) {
   const allowOrigin = origin && allowedOrigins.includes(origin)
