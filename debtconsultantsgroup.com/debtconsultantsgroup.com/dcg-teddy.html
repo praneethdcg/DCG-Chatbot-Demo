@@ -1734,7 +1734,9 @@
                 expiresIn,
                 issuedAt,
                 expiresAt,
-                context
+                context,
+                data: data,  // Store the full data object
+                lastEventId: data.lastEventId  // Store lastEventId at top level for easy access
             };
 
             scheduleSessionRefresh(expiresAt);
@@ -3360,9 +3362,34 @@
                     accessTokenLength: session.accessToken ? session.accessToken.length : 0
                 });
                 const metadata = buildMiawConversationMetadata();
-                const conversation = await createMiawConversation(session.accessToken, metadata);
-                console.log('MIAW Conversation created:', conversation);
-                await establishSseConnection(session.accessToken, conversation.routingKey);
+
+                let conversation;
+                let routingKey;
+
+                // Try to create conversation, but handle 404 gracefully
+                try {
+                    conversation = await createMiawConversation(session.accessToken, metadata);
+                    console.log('MIAW Conversation created:', conversation);
+                    routingKey = conversation.routingKey;
+                } catch (convError) {
+                    // If conversation creation fails with 404, use session-based approach
+                    if (convError.status === 404) {
+                        console.warn('Conversation API not available (404), using session-based approach');
+                        // Use lastEventId from session as routing key
+                        routingKey = session.data?.lastEventId || session.lastEventId || 'default';
+                        conversation = {
+                            conversationId: 'session',
+                            routingKey: routingKey
+                        };
+                        // Store for later use
+                        miawConversation = conversation;
+                    } else {
+                        // Re-throw if it's not a 404
+                        throw convError;
+                    }
+                }
+
+                await establishSseConnection(session.accessToken, routingKey);
                 await sendInitialAgentContextMessage();
                 updateAgentUi(MIAW_CONNECTION_STATES.CONNECTED, { agentName: agentMetadata.name });
             } catch (error) {

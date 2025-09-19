@@ -418,7 +418,9 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
   const createUrl = `${scrtUrl}/iamessage/api/v2/conversations`;
 
   const payload = {
-    esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME
+    esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME,
+    // Add orgId to the payload as well
+    orgId: process.env.SALESFORCE_ORG_ID
   };
 
   if (metadata) {
