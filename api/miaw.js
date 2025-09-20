@@ -496,22 +496,19 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
           rateLimitRemaining: rateLimitRemaining ?? null
         });
       } catch (v1Error) {
-        console.log(`[${requestId}] v1 also failed (${v1Error?.status}), using session-based approach`);
+        console.log(`[${requestId}] v1 also failed (${v1Error?.status}), returning error`);
 
-        // For session-based messaging, the client needs to use the lastEventId from the session
-        // The routingKey should be passed from the frontend (it's the lastEventId from session creation)
-        const sessionBasedResponse = {
-          conversationId: `session_${Date.now()}`,
-          routingKey: body.lastEventId || body.routingKey || 'session_based',
-          conversationSupported: false,
-          sessionBased: true,
-          note: 'Using session-based messaging - use lastEventId from session for SSE connection'
-        };
-
-        return res.status(200).json({
-          success: true,
-          data: sessionBasedResponse,
-          rateLimitRemaining: rateLimitRemaining ?? null
+        // Both v2 and v1 failed - the conversation API is not available
+        // Return the actual error instead of faking success
+        return res.status(404).json({
+          success: false,
+          error: 'Conversation API not available in this Salesforce org',
+          requestId,
+          details: {
+            v2Status: 404,
+            v1Status: v1Error?.status || 'unknown',
+            suggestion: 'Check Embedded Service Deployment configuration and ensure API access is enabled'
+          }
         });
       }
     }
@@ -581,22 +578,10 @@ async function handleSendMessage(body, res, rateLimitRemaining, requestId) {
   }
 
   // Check if this is a session-based conversation (no real conversation API)
-  // Session-based conversations have IDs starting with 'session_'
+  // For now, we'll attempt to send even for session-based conversations
+  // and let Salesforce reject if invalid
   if (conversationId.startsWith('session_')) {
-    console.log(`[${requestId}] Session-based messaging detected, cannot send via REST API`);
-
-    // For session-based messaging, we can't send messages via REST API
-    // Messages must be sent through the SSE connection or other means
-    return res.status(200).json({
-      success: true,
-      data: {
-        messageId: `msg_${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        sessionBased: true,
-        note: 'Message queued for session-based delivery'
-      },
-      rateLimitRemaining: rateLimitRemaining ?? null
-    });
+    console.log(`[${requestId}] Session-based conversation detected, attempting send anyway`);
   }
 
   const allowedTypes = new Map([
