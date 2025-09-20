@@ -3382,27 +3382,30 @@
                 let conversation;
                 let routingKey;
 
-                // Try to create conversation, but handle 404 gracefully
+                // Try to create conversation - this is required for messaging to work
                 try {
                     conversation = await createMiawConversation(session.accessToken, metadata);
                     console.log('MIAW Conversation created:', conversation);
                     routingKey = conversation.routingKey;
                 } catch (convError) {
-                    // If conversation creation fails with 404, use session-based approach
+                    // Conversation API is required - can't proceed without it
+                    console.error('Failed to create conversation:', convError);
+
+                    let errorMessage = 'Unable to connect to live agent. ';
                     if (convError.status === 404) {
-                        console.warn('Conversation API not available (404), using session-based approach');
-                        // Use lastEventId from session as routing key
-                        routingKey = session.data?.lastEventId || session.lastEventId || 'default';
-                        conversation = {
-                            conversationId: 'session',
-                            routingKey: routingKey
-                        };
-                        // Store for later use
-                        miawConversation = conversation;
+                        errorMessage += 'The conversation API is not available in your Salesforce org. Please contact your administrator to enable MIAW conversation endpoints.';
                     } else {
-                        // Re-throw if it's not a 404
-                        throw convError;
+                        errorMessage += convError.message || 'Please try again later.';
                     }
+
+                    addMessage('bot', `<div class="error-message">
+                        <strong>Connection Error</strong>
+                        <p>${errorMessage}</p>
+                    </div>`, true);
+
+                    isConnectingToAgent = false;
+                    updateAgentUi(MIAW_CONNECTION_STATES.DISCONNECTED);
+                    throw convError;
                 }
 
                 await establishSseConnection(session.accessToken, routingKey);
