@@ -474,6 +474,12 @@ async function handleCreateConversation(body, res, rateLimitRemaining, requestId
     // Handle 404 - conversation API not available, try v1 or use session-based approach
     if (status === 404) {
       console.log(`[${requestId}] v2 Conversation API not found, trying v1 endpoint`);
+      console.log(`[${requestId}] v2 error details:`, {
+        url: createUrl,
+        orgId: process.env.SALESFORCE_ORG_ID,
+        esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME,
+        errorDetails: error?.details
+      });
 
       // Try v1 endpoint
       const v1Url = createUrl.replace('/api/v2/', '/api/v1/');
@@ -1121,6 +1127,66 @@ export default async function handler(req, res) {
 
   if (action === 'sse') {
     return handleSse(req, res, requestId);
+  }
+
+  // Test endpoint to verify configuration
+  if (action === 'testConfig') {
+    const { accessToken } = body;
+
+    const scrtUrl = getBaseScrtUrl();
+    const testResults = {
+      environment: {
+        scrtUrl,
+        orgId: process.env.SALESFORCE_ORG_ID,
+        esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME
+      },
+      tests: []
+    };
+
+    if (accessToken) {
+      // Test different endpoints
+      const endpoints = [
+        { name: 'v2_conversations', url: `${scrtUrl}/iamessage/api/v2/conversations` },
+        { name: 'v1_conversations', url: `${scrtUrl}/iamessage/api/v1/conversations` },
+        { name: 'v2_conversation', url: `${scrtUrl}/iamessage/api/v2/conversation` },
+        { name: 'v1_conversation', url: `${scrtUrl}/iamessage/api/v1/conversation` }
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(endpoint.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+              'X-Org-Id': process.env.SALESFORCE_ORG_ID,
+              'OrgId': process.env.SALESFORCE_ORG_ID
+            },
+            body: JSON.stringify({
+              esDeveloperName: process.env.SALESFORCE_ES_DEVELOPER_NAME,
+              orgId: process.env.SALESFORCE_ORG_ID
+            })
+          });
+
+          const text = await response.text();
+          testResults.tests.push({
+            endpoint: endpoint.name,
+            url: endpoint.url,
+            status: response.status,
+            statusText: response.statusText,
+            response: text.substring(0, 200)
+          });
+        } catch (e) {
+          testResults.tests.push({
+            endpoint: endpoint.name,
+            url: endpoint.url,
+            error: e.message
+          });
+        }
+      }
+    }
+
+    return res.status(200).json(testResults);
   }
 
   console.log(`[${requestId}] Unsupported action:`, {
